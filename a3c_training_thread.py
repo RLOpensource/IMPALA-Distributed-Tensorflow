@@ -11,6 +11,7 @@ def network(x, num_action):
     x = tf.layers.conv2d(inputs=x, filters=32, kernel_size=[4, 4], strides=[2, 2], padding='VALID', activation=tf.nn.relu)
     x = tf.layers.conv2d(inputs=x, filters=32, kernel_size=[3, 3], strides=[1, 1], padding='VALID', activation=tf.nn.relu)
     x = tf.layers.flatten(x)
+    x = tf.layers.dense(inputs=x, units=1024, activation=tf.nn.relu)
     actor = tf.layers.dense(inputs=x, units=num_action, activation=tf.nn.softmax)
     critic = tf.squeeze(tf.layers.dense(inputs=x, units=1, activation=None), axis=1)
     
@@ -81,6 +82,7 @@ class Agent(object):
         self.trajectory = self.unroll + 1
         self.global_network = global_network
         self.local_network = local_network
+        self.discount_factor = 0.99
 
         self.assign_tf = utils.copy_src_to_dst('net_global', 'net_'+str(self.thread_index))
 

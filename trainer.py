@@ -11,6 +11,8 @@ import time
 import sys
 import gym
 
+from tensorboardX import SummaryWriter
+
 def main(_):
     ps_hosts = FLAGS.ps_hosts.split(",")
     worker_hosts = FLAGS.worker_hosts.split(",")
@@ -69,7 +71,7 @@ def main(_):
                                    init_op=init_op)
 
         with sv.managed_session(server.target) as sess:
-
+            writer = SummaryWriter('runs/task_index_{}'.format(FLAGS.task_index))
             agent.set_session(sess)
             agent.assign()
 
@@ -148,9 +150,9 @@ def main(_):
                                                     action=np.stack(episode_action),
                                                     behavior_policy=np.stack(episode_behavior_policy))
                 agent.assign()
-                writer.add_scalar('pi_loss', pi_loss, loss_step)
-                writer.add_scalar('value_loss', value_loss, loss_step)
-                writer.add_scalar('entropy', entropy, loss_step)
+                writer.add_scalar('pi_loss', pi_loss, train_episode)
+                writer.add_scalar('value_loss', value_loss, train_episode)
+                writer.add_scalar('entropy', entropy, train_episode)
 
 
 if __name__ == "__main__":
