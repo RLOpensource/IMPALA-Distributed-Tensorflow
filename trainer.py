@@ -76,6 +76,8 @@ def main(_):
             agent.assign()
 
             env = gym.make('PongDeterministic-v4')
+            if FLAGS.task_index == 0:
+                env = gym.wrappers.Monitor(env, 'save-mov', video_callable=lambda episode_id: episode_id%10==0)
             done = False
             _ = env.reset()
             frame = utils.pipeline(env)

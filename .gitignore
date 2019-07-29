@@ -2,3 +2,4 @@ runs/
 __pycache__/
 .DS_Store/
 nohup.out
+save-mov/
