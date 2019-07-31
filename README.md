@@ -10,7 +10,7 @@ sh start.sh
 ```
 
 <div align="center">
-  <img src="source/result.gif" width="50%" height='300'>
+  <img src="source/result.gif" width="33%" height='300'>
 </div>
 
 <div align="center">
