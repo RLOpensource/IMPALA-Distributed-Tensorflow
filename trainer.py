@@ -117,8 +117,8 @@ def main(_):
                     next_state = copy.deepcopy(history)
 
                     if lives != info['ale.lives']:
-                        d = True
                         reward = -1
+                        d = True
                     else:
                         d = False
 
@@ -127,7 +127,7 @@ def main(_):
                     episode_state.append(state)
                     episode_next_state.append(next_state)
                     episode_reward.append(reward)
-                    episode_done.append(d)
+                    episode_done.append(done)
                     episode_action.append(action)
                     episode_behavior_policy.append(behavior_policy)
 

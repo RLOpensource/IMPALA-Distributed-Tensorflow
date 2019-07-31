@@ -12,8 +12,12 @@ def network(x, num_action):
     x = tf.layers.conv2d(inputs=x, filters=32, kernel_size=[3, 3], strides=[1, 1], padding='VALID', activation=tf.nn.relu)
     x = tf.layers.flatten(x)
     x = tf.layers.dense(inputs=x, units=1024, activation=tf.nn.relu)
-    actor = tf.layers.dense(inputs=x, units=num_action, activation=tf.nn.softmax)
-    critic = tf.squeeze(tf.layers.dense(inputs=x, units=1, activation=None), axis=1)
+    actor = tf.layers.dense(inputs=x, units=1024, activation=tf.nn.relu)
+    actor = tf.layers.dense(inputs=actor, units=256, activation=tf.nn.relu)
+    actor = tf.layers.dense(inputs=actor, units=num_action, activation=tf.nn.softmax)
+    critic = tf.layers.dense(inputs=x, units=1024, activation=tf.nn.relu)
+    critic = tf.layers.dense(inputs=critic, units=256, activation=tf.nn.relu)
+    critic = tf.squeeze(tf.layers.dense(inputs=critic, units=1, activation=None), axis=1)
     
     return actor, critic
 
@@ -39,8 +43,8 @@ class Network(object):
         self.input_shape = input_shape
         self.unroll = unroll
         self.discount_factor = 0.99
-        self.lr = 0.001
-        self.coef = 0.01
+        self.lr = 0.00025
+        self.coef = 0.1
 
         with tf.device(device), tf.variable_scope(scope_name):
             self.s_ph = tf.placeholder(tf.float32, shape=[None, self.unroll, *self.input_shape])
@@ -50,6 +54,8 @@ class Network(object):
             self.behavior_policy = tf.placeholder(tf.float32, shape=[None, self.unroll, self.output_size])
             self.r_ph = tf.placeholder(tf.float32, shape=[None, self.unroll])
 
+            self.clipped_reward = tf.clip_by_value(self.r_ph, -1.0, 1.0)
+
             self.discounts = tf.to_float(~self.d_ph) * self.discount_factor
 
             self.policy, self.value, self.next_value = build_model(self.s_ph, self.ns_ph, self.input_shape, self.output_size, self.unroll)
@@ -57,7 +63,7 @@ class Network(object):
             self.transpose_vs, self.transpose_clipped_rho = vtrace.from_softmax(
                 behavior_policy_softmax=self.behavior_policy,
                 target_policy_softmax=self.policy,
-                actions=self.a_ph, discounts=self.discounts, rewards=self.r_ph,
+                actions=self.a_ph, discounts=self.discounts, rewards=self.clipped_reward,
                 values=self.value, next_value=self.next_value, action_size=self.output_size)
 
             self.vs = tf.transpose(self.transpose_vs, perm=[1, 0])
@@ -71,7 +77,8 @@ class Network(object):
             self.pi_loss = vtrace.compute_policy_loss(self.policy, self.a_ph, self.pg_advantage_ph, self.output_size)
 
             self.total_loss = self.pi_loss + self.value_loss + self.entropy * self.coef
-            self.optimizer = tf.train.RMSPropOptimizer(self.lr, epsilon=0.01, momentum=0.0, decay=0.99)
+            # self.optimizer = tf.train.RMSPropOptimizer(self.lr, epsilon=0.01, momentum=0.0, decay=0.99)
+            self.optimizer = tf.train.AdamOptimizer(self.lr)
             self.train_op = self.optimizer.minimize(self.total_loss)
 
 class Agent(object):
@@ -112,7 +119,7 @@ class Agent(object):
         unrolled_length = len(unrolled_state)
         sampled_range = np.arange(unrolled_length)
         np.random.shuffle(sampled_range)
-        shuffled_idx = sampled_range[:32]
+        shuffled_idx = sampled_range[:64]
 
         s_ph = np.stack([unrolled_state[i, 1:] for i in shuffled_idx])
         ns_ph = np.stack([unrolled_next_state[i, 1:] for i in shuffled_idx])
