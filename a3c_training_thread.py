@@ -44,7 +44,7 @@ class Network(object):
         self.unroll = unroll
         self.discount_factor = 0.99
         self.lr = 0.0005
-        self.coef = 0.1
+        self.coef = 0.05
 
         with tf.device(device), tf.variable_scope(scope_name):
             self.s_ph = tf.placeholder(tf.float32, shape=[None, self.unroll, *self.input_shape])
