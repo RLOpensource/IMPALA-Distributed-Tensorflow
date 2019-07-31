@@ -1,6 +1,6 @@
 # Implementation of IMPALA with Distributed Tensorflow
 
-* These results are from only 20 threads. So unstable to train.
+* These results are from only 20 threads.
 * Tensorflow Implementation
 * Use distributed tensorflow
 * BreakoutDeterministic-v4
@@ -8,6 +8,19 @@
 ```
 sh start.sh
 ```
+
+<div align="center">
+  <img src="source/result.gif" width="50%" height='300'>
+</div>
+
+<div align="center">
+  <img src="source/entropy.png" width="32%" height='300'>
+  <img src="source/max_prob.png" width="33%" height='300'>
+  <img src="source/pi_loss.png" width="33%" height='300'>
+  <img src="source/score.png" width="32%" height='300'>
+  <img src="source/step.png" width="33%" height='300'>
+  <img src="source/value.png" width="33%" height='300'>
+</div>
 
 # Todo
 

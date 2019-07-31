@@ -43,7 +43,7 @@ class Network(object):
         self.input_shape = input_shape
         self.unroll = unroll
         self.discount_factor = 0.99
-        self.lr = 0.00025
+        self.lr = 0.0005
         self.coef = 0.1
 
         with tf.device(device), tf.variable_scope(scope_name):
