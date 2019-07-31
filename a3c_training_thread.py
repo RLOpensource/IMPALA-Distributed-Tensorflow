@@ -77,8 +77,8 @@ class Network(object):
             self.pi_loss = vtrace.compute_policy_loss(self.policy, self.a_ph, self.pg_advantage_ph, self.output_size)
 
             self.total_loss = self.pi_loss + self.value_loss + self.entropy * self.coef
-            # self.optimizer = tf.train.RMSPropOptimizer(self.lr, epsilon=0.01, momentum=0.0, decay=0.99)
-            self.optimizer = tf.train.AdamOptimizer(self.lr)
+            self.optimizer = tf.train.RMSPropOptimizer(self.lr, epsilon=0.01, momentum=0.0, decay=0.99)
+            # self.optimizer = tf.train.AdamOptimizer(self.lr)
             self.train_op = self.optimizer.minimize(self.total_loss)
 
 class Agent(object):
@@ -119,7 +119,7 @@ class Agent(object):
         unrolled_length = len(unrolled_state)
         sampled_range = np.arange(unrolled_length)
         np.random.shuffle(sampled_range)
-        shuffled_idx = sampled_range[:64]
+        shuffled_idx = sampled_range[:32]
 
         s_ph = np.stack([unrolled_state[i, 1:] for i in shuffled_idx])
         ns_ph = np.stack([unrolled_next_state[i, 1:] for i in shuffled_idx])
