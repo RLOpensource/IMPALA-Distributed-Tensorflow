@@ -76,7 +76,7 @@ def main(_):
             agent.set_session(sess)
             agent.assign()
 
-            env = wrappers.make_env('BreakoutDeterministic-v4')
+            env = wrappers.make_env('BreakoutNoFrameskip-v4')
             if FLAGS.task_index == 0:
                 env = gym.wrappers.Monitor(env, 'save-mov', video_callable=lambda episode_id: episode_id%10==0)
             done = False
