@@ -3,7 +3,7 @@ import tensorflow as tf
 def compute_value_loss(vs, value):
     error = tf.stop_gradient(vs[:, 0]) - value[:, 0]
     l2_loss = tf.square(error)
-    return tf.reduce_sum(l2_loss) * 0.5
+    return tf.reduce_mean(l2_loss) * 0.5
 
 def compute_policy_loss(softmax, actions, advantages, output_size):
     onehot_action = tf.one_hot(actions, output_size)
@@ -11,14 +11,14 @@ def compute_policy_loss(softmax, actions, advantages, output_size):
     cross_entropy = tf.log(selected_softmax)
     advantages = tf.stop_gradient(advantages)
     policy_gradient_loss_per_timestep = cross_entropy[:, 0] * advantages[:, 0]
-    return -tf.reduce_sum(policy_gradient_loss_per_timestep)
+    return -tf.reduce_mean(policy_gradient_loss_per_timestep)
 
 def compute_entropy_loss(softmax):
     policy = softmax
     log_policy = tf.log(softmax)
     entropy_per_time_step = -policy * log_policy
     entropy_per_time_step = tf.reduce_sum(entropy_per_time_step[:, 0], axis=1)
-    return -tf.reduce_sum(entropy_per_time_step)
+    return -tf.reduce_mean(entropy_per_time_step)
 
 def log_probs_from_logits_and_actions(policy_logits, actions):
     policy_logits.shape.assert_has_rank(3)

@@ -4,6 +4,7 @@ import numpy as np
 
 import a3c_training_thread
 import argparse
+import wrappers
 import config
 import utils
 import copy
@@ -75,14 +76,11 @@ def main(_):
             agent.set_session(sess)
             agent.assign()
 
-            env = gym.make('BreakoutDeterministic-v4')
+            env = wrappers.make_env('BreakoutDeterministic-v4')
             if FLAGS.task_index == 0:
                 env = gym.wrappers.Monitor(env, 'save-mov', video_callable=lambda episode_id: episode_id%10==0)
             done = False
-            _ = env.reset()
-            frame = utils.pipeline(env)
-            history = np.stack((frame, frame, frame, frame), axis=2)
-            state = copy.deepcopy(history)
+            state = env.reset()
             lives = 5
 
             episode = 0
@@ -110,17 +108,13 @@ def main(_):
                     step += 1
                     total_max_prob += max_prob
 
-                    _, reward, done, info = env.step(action+1)
-                    frame = utils.pipeline(env)
-                    history[:, :, :-1] = history[:, :, 1:]
-                    history[:, :, -1] = frame
-                    next_state = copy.deepcopy(history)
+                    next_state, reward, done, info = env.step(action+1)
 
                     if lives != info['ale.lives']:
                         r = -1
                         d = True
                     else:
-                        r = 0
+                        r = reward
                         d = False
 
                     score += reward
@@ -128,7 +122,7 @@ def main(_):
                     episode_state.append(state)
                     episode_next_state.append(next_state)
                     episode_reward.append(r)
-                    episode_done.append(done)
+                    episode_done.append(d)
                     episode_action.append(action)
                     episode_behavior_policy.append(behavior_policy)
 
@@ -145,10 +139,7 @@ def main(_):
                         step = 0
                         total_max_prob = 0
                         lives = 5
-                        _ = env.reset()
-                        frame = utils.pipeline(env)
-                        history = np.stack((frame, frame, frame, frame), axis=2)
-                        state = copy.deepcopy(history)
+                        state = env.reset()
 
                 pi_loss, value_loss, entropy = agent.update(
                                                     state=np.stack(episode_state),
