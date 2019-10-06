@@ -11,21 +11,7 @@ sh start.sh
 
 <div align="center">
   <img src="source/sum/result.gif" width="33%" height='300'>
-  <img src="source/sum/result.gif" width="33%" height='300'>
 </div>
-
-* Train with reduce_sum
-
-<div align="center">
-  <img src="source/sum/entropy.png" width="32%" height='300'>
-  <img src="source/sum/max_prob.png" width="33%" height='300'>
-  <img src="source/sum/pi_loss.png" width="33%" height='300'>
-  <img src="source/sum/score.png" width="32%" height='300'>
-  <img src="source/sum/step.png" width="33%" height='300'>
-  <img src="source/sum/value.png" width="33%" height='300'>
-</div>
-
-* Train with reduce_mean
 
 <div align="center">
   <img src="source/mean/entropy.png" width="32%" height='300'>
