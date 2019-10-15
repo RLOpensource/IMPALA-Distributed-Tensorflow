@@ -7,9 +7,9 @@ import time
 import sys
 
 def network(x, num_action):
-    x = tf.layers.conv2d(inputs=x, filters=16, kernel_size=[8, 8], strides=[4, 4], padding='VALID', activation=tf.nn.relu)
-    x = tf.layers.conv2d(inputs=x, filters=32, kernel_size=[4, 4], strides=[2, 2], padding='VALID', activation=tf.nn.relu)
-    x = tf.layers.conv2d(inputs=x, filters=32, kernel_size=[3, 3], strides=[1, 1], padding='VALID', activation=tf.nn.relu)
+    x = tf.layers.conv2d(inputs=x, filters=32, kernel_size=[8, 8], strides=[4, 4], padding='VALID', activation=tf.nn.relu)
+    x = tf.layers.conv2d(inputs=x, filters=64, kernel_size=[4, 4], strides=[2, 2], padding='VALID', activation=tf.nn.relu)
+    x = tf.layers.conv2d(inputs=x, filters=64, kernel_size=[3, 3], strides=[1, 1], padding='VALID', activation=tf.nn.relu)
     x = tf.layers.flatten(x)
     x = tf.layers.dense(inputs=x, units=1024, activation=tf.nn.relu)
     actor = tf.layers.dense(inputs=x, units=1024, activation=tf.nn.relu)

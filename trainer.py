@@ -76,11 +76,14 @@ def main(_):
             agent.set_session(sess)
             agent.assign()
 
-            env = wrappers.make_env('BreakoutNoFrameskip-v4')
+            env = gym.make('BreakoutDeterministic-v4')
             if FLAGS.task_index == 0:
                 env = gym.wrappers.Monitor(env, 'save-mov', video_callable=lambda episode_id: episode_id%10==0)
             done = False
-            state = env.reset()
+            _ = env.reset()
+            frame = utils.pipeline(env)
+            history = np.stack((frame, frame, frame, frame), axis=2)
+            state = copy.deepcopy(history)
             lives = 5
 
             episode = 0
@@ -108,8 +111,11 @@ def main(_):
                     step += 1
                     total_max_prob += max_prob
 
-                    next_state, reward, done, info = env.step(action+1)
-
+                    _, reward, done, info = env.step(action+1)
+                    frame = utils.pipeline(env)
+                    history[:, :, :-1] = history[:, :, 1:]
+                    history[:, :, -1] = frame
+                    next_state = copy.deepcopy(history)
                     if lives != info['ale.lives']:
                         r = -1
                         d = True
@@ -139,7 +145,10 @@ def main(_):
                         step = 0
                         total_max_prob = 0
                         lives = 5
-                        state = env.reset()
+                        _ = env.reset()
+                        frame = utils.pipeline(env)
+                        history = np.stack((frame, frame, frame, frame), axis=2)
+                        state = copy.deepcopy(history)
 
                 pi_loss, value_loss, entropy = agent.update(
                                                     state=np.stack(episode_state),
