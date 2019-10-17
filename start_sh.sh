@@ -1,5 +1,5 @@
 ps_hosts="localhost:2222"
-worker_hosts="localhost:2223,localhost:2224,localhost:2225,localhost:2226,localhost:2227,localhost:2228,localhost:2229,localhost:2230,localhost:2231,localhost:2232,localhost:2233,localhost:2234,localhost:2235,localhost:2236,localhost:2237,localhost:2238,localhost:2239,localhost:2240,localhost:2241,localhost:2242"
+worker_hosts="localhost:2223,localhost:2224,localhost:2225,localhost:2226,localhost:2227,localhost:2228,localhost:2229,localhost:2230,localhost:2231,localhost:2232,localhost:2233,localhost:2234,localhost:2235,localhost:2236,localhost:2237,localhost:2238"
 
 python trainer.py  --ps_hosts=$ps_hosts  --worker_hosts=$worker_hosts  --job_name=ps --task_index=0 & # 22
 
@@ -19,7 +19,3 @@ python trainer.py  --ps_hosts=$ps_hosts  --worker_hosts=$worker_hosts  --job_nam
 python trainer.py  --ps_hosts=$ps_hosts  --worker_hosts=$worker_hosts  --job_name=worker --task_index=13 & #36
 python trainer.py  --ps_hosts=$ps_hosts  --worker_hosts=$worker_hosts  --job_name=worker --task_index=14 & #37
 python trainer.py  --ps_hosts=$ps_hosts  --worker_hosts=$worker_hosts  --job_name=worker --task_index=15 & #38
-python trainer.py  --ps_hosts=$ps_hosts  --worker_hosts=$worker_hosts  --job_name=worker --task_index=16 & #39
-python trainer.py  --ps_hosts=$ps_hosts  --worker_hosts=$worker_hosts  --job_name=worker --task_index=17 & #40
-python trainer.py  --ps_hosts=$ps_hosts  --worker_hosts=$worker_hosts  --job_name=worker --task_index=18 & #41
-python trainer.py  --ps_hosts=$ps_hosts  --worker_hosts=$worker_hosts  --job_name=worker --task_index=19 & #42

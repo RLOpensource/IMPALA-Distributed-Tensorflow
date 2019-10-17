@@ -77,8 +77,8 @@ def main(_):
             agent.assign()
 
             env = gym.make('BreakoutDeterministic-v4')
-            if FLAGS.task_index == 0:
-                env = gym.wrappers.Monitor(env, 'save-mov', video_callable=lambda episode_id: episode_id%10==0)
+            # if FLAGS.task_index == 0:
+            #     env = gym.wrappers.Monitor(env, 'save-mov', video_callable=lambda episode_id: episode_id%10==0)
             done = False
             _ = env.reset()
             frame = utils.pipeline(env)
@@ -104,7 +104,7 @@ def main(_):
                 episode_action = []
                 episode_behavior_policy = []
 
-                for i in range(128):
+                for i in range(256):
                     
                     action, behavior_policy, max_prob = agent.get_policy_and_action(state)
 
