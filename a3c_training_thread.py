@@ -78,8 +78,11 @@ class Network(object):
 
             self.total_loss = self.pi_loss + self.value_loss + self.entropy * self.coef
             self.optimizer = tf.train.RMSPropOptimizer(self.lr, epsilon=0.01, momentum=0.0, decay=0.99)
-            # self.optimizer = tf.train.AdamOptimizer(self.lr)
-            self.train_op = self.optimizer.minimize(self.total_loss)
+            
+            self.trainable_variable = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope_name)
+            self.gvs = self.optimizer.compute_gradients(self.total_loss, var_list=self.trainable_variable)
+            self.capped_gvs = [(tf.clip_by_value(grad, -0.1, 0.1), var) for grad, var in self.gvs]            
+            self.train_op = self.optimizer.apply_gradients(self.capped_gvs)
 
 class Agent(object):
     def __init__(self, input_shape, output_size, unroll, thread_index, device, global_network, local_network):
