@@ -7,6 +7,18 @@
 * Tensorflow Implementation
 * Use distributed tensorflow to implement Actor
 * BreakoutDeterministic-v4
+* Training with 2 hours
+* Same parameter of [paper](https://arxiv.org/abs/1802.01561)
+```
+start learning rate = 0.0006
+end learning rate = 0
+learning frame = 1e6
+gradient clip norm = 40
+trajectory = 20
+batch size = 32
+reward clipping = -1 ~ 1
+```
+
 
 ## Dependency
 
@@ -51,14 +63,16 @@ wait
 
 * Plot
 
-<!-- <div align="center">
-  <img src="source/mean/entropy.png" width="32%" height='300'>
-  <img src="source/mean/max_prob.png" width="33%" height='300'>
-  <img src="source/mean/pi_loss.png" width="33%" height='300'>
-  <img src="source/mean/score.png" width="32%" height='300'>
-  <img src="source/mean/step.png" width="33%" height='300'>
-  <img src="source/mean/value.png" width="33%" height='300'>
-</div> -->
+<div align="center">
+  <img src="source/baseline_loss.png" width="32%" height='300'>
+  <img src="source/entropy.png" width="33%" height='300'>
+  <img src="source/episode_step.png" width="33%" height='300'>
+  <img src="source/learning_rate.png" width="32%" height='300'>
+  <img src="source/pi_loss.png" width="33%" height='300'>
+  <img src="source/prob.png" width="33%" height='300'>
+  <img src="source/score.png" width="33%" height='300'>
+  <img src="source/time.png" width="33%" height='300'>
+</div>
 
 # Todo
 
