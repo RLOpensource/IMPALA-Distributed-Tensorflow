@@ -24,7 +24,7 @@ class FireResetEnv(gym.Wrapper):
         return obs
 
 class MaxAndSkipEnv(gym.Wrapper):
-    def __init__(self, env=None, skip=4):
+    def __init__(self, env=None, skip=1):
         """Return only every `skip`-th frame"""
         super(MaxAndSkipEnv, self).__init__(env)
         # most recent raw observations (for max pooling across time steps)
@@ -89,6 +89,9 @@ class ScaledFloatFrame(gym.ObservationWrapper):
     def observation(self, obs):
         return np.array(obs).astype(np.float32) / 255.0
 
+class ScaledUint8Frame(gym.ObservationWrapper):
+    def observation(self, obs):
+        return np.array(obs).astype(np.uint8)
 
 class BufferWrapper(gym.ObservationWrapper):
     def __init__(self, env, n_steps, dtype=np.float32):
@@ -108,7 +111,7 @@ class BufferWrapper(gym.ObservationWrapper):
         return self.buffer.transpose([1, 2, 0])
 
 
-def make_env(env_name):
+def make_float_env(env_name):
     env = gym.make(env_name)
     env = MaxAndSkipEnv(env)
     env = FireResetEnv(env)
@@ -116,3 +119,12 @@ def make_env(env_name):
     env = ImageToPyTorch(env)
     env = BufferWrapper(env, 4)
     return ScaledFloatFrame(env)
+
+def make_uint8_env(env_name):
+    env = gym.make(env_name)
+    env = MaxAndSkipEnv(env)
+    env = FireResetEnv(env)
+    env = ProcessFrame84(env)
+    env = ImageToPyTorch(env)
+    env = BufferWrapper(env, 4)
+    return ScaledUint8Frame(env)
