@@ -73,8 +73,8 @@ wait
 * Pong
   
 <div align="center">
-  <img src="source/pong/pong_1.png" width="100%" height='150'>
   <img src="source/pong/pong_2.png" width="100%" height='150'>
+  <img src="source/pong/pong_1.png" width="100%" height='150'>
 </div>
 
 
