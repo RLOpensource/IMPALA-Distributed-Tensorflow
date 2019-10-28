@@ -96,7 +96,7 @@ def main(_):
                 'trajectory_data',
                 ['state', 'next_state', 'reward', 'done', 'action', 'behavior_policy'])
 
-        env = wrappers.make_uint8_env('BreakoutDeterministic-v4')
+        env = wrappers.make_uint8_env(config.env_name)
         if FLAGS.task == 0:
             env = gym.wrappers.Monitor(env, 'save-mov', video_callable=lambda episode_id: episode_id%10==0)
         state = env.reset()
@@ -105,7 +105,6 @@ def main(_):
         score = 0
         episode_step = 0
         total_max_prob = 0
-        lives = 5
 
         writer = tensorboardX.SummaryWriter('runs/actor_{}'.format(FLAGS.task))
 
@@ -115,25 +114,25 @@ def main(_):
 
             for _ in range(FLAGS.trajectory):
 
+                env.render()
+
                 action, behavior_policy, max_prob = learner.get_policy_and_action(state)
 
                 episode_step += 1
                 total_max_prob += max_prob
 
-                next_state, reward, done, info = env.step(action+1)
+                next_state, reward, done, info = env.step(action)
 
                 score += reward
 
                 if lives != info['ale.lives']:
-                    r = -1
                     d = True
                 else:
-                    r = reward
                     d = False
                 
                 unroll_data.state.append(state)
                 unroll_data.next_state.append(next_state)
-                unroll_data.reward.append(r)
+                unroll_data.reward.append(reward)
                 unroll_data.done.append(d)
                 unroll_data.action.append(action)
                 unroll_data.behavior_policy.append(behavior_policy)
