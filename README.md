@@ -6,7 +6,6 @@
 * These results are from only 20 threads.
 * Tensorflow Implementation
 * Use distributed tensorflow to implement Actor
-* BreakoutDeterministic-v4
 * Training with 2 hours
 * Same parameter of [paper](https://arxiv.org/abs/1802.01561)
 ```
@@ -55,24 +54,29 @@ wait
 
 ## Result
 
-* Video
+### Video
 
 <div align="center">
-  <img src="source/openaigym.video.0.25421.video001440.gif" width="33%" height='300'>
+  <img src="source/breakout/openaigym.video.0.25421.video001440.gif" width="33%" height='300'>
+  <img src="source/pong/openaigym.video.0.20974.video000440.gif" width="33%" height='300'>
 </div>
 
-* Plot
+### Plotting
 
+* Breakout
+  
 <div align="center">
-  <img src="source/baseline_loss.png" width="32%" height='300'>
-  <img src="source/entropy.png" width="33%" height='300'>
-  <img src="source/episode_step.png" width="33%" height='300'>
-  <img src="source/learning_rate.png" width="32%" height='300'>
-  <img src="source/pi_loss.png" width="33%" height='300'>
-  <img src="source/prob.png" width="33%" height='300'>
-  <img src="source/score.png" width="33%" height='300'>
-  <img src="source/time.png" width="33%" height='300'>
+  <img src="source/breakout/breakout_1.png" width="100%" height='150'>
+  <img src="source/breakout/breakout_2.png" width="100%" height='150'>
 </div>
+
+* Pong
+  
+<div align="center">
+  <img src="source/pong/pong_1.png" width="100%" height='150'>
+  <img src="source/pong/pong_2.png" width="100%" height='150'>
+</div>
+
 
 # Todo
 

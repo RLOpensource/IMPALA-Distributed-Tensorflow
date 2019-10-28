@@ -48,14 +48,18 @@ def main(_):
 
     filters = [shared_job_device, local_job_device]
 
+    input_shape = [84, 84, 4]
+    output_size = 6
+    env_name = 'PongDeterministic-v4'
+
     with tf.device(shared_job_device):
         queue = buffer_queue.FIFOQueue(
-            FLAGS.trajectory, config.input_shape, config.output_size,
+            FLAGS.trajectory, input_shape, output_size,
             FLAGS.queue_size, FLAGS.batch_size, FLAGS.num_actors)
         learner = model.IMPALA(
             trajectory=FLAGS.trajectory,
-            input_shape=config.input_shape,
-            num_action=config.output_size,
+            input_shape=input_shape,
+            num_action=output_size,
             discount_factor=FLAGS.discount_factor,
             start_learning_rate=FLAGS.start_learning_rate,
             end_learning_rate=FLAGS.end_learning_rate,
@@ -96,7 +100,7 @@ def main(_):
                 'trajectory_data',
                 ['state', 'next_state', 'reward', 'done', 'action', 'behavior_policy'])
 
-        env = wrappers.make_uint8_env('BreakoutDeterministic-v4')
+        env = wrappers.make_uint8_env(env_name)
         if FLAGS.task == 0:
             env = gym.wrappers.Monitor(env, 'save-mov', video_callable=lambda episode_id: episode_id%10==0)
         state = env.reset()
@@ -105,7 +109,6 @@ def main(_):
         score = 0
         episode_step = 0
         total_max_prob = 0
-        lives = 5
 
         writer = tensorboardX.SummaryWriter('runs/actor_{}'.format(FLAGS.task))
 
@@ -120,26 +123,22 @@ def main(_):
                 episode_step += 1
                 total_max_prob += max_prob
 
-                next_state, reward, done, info = env.step(action+1)
+                next_state, reward, done, info = env.step(action)
 
                 score += reward
 
-                if lives != info['ale.lives']:
-                    r = -1
+                d = False
+                if reward == -1:
                     d = True
-                else:
-                    r = reward
-                    d = False
                 
                 unroll_data.state.append(state)
                 unroll_data.next_state.append(next_state)
-                unroll_data.reward.append(r)
+                unroll_data.reward.append(reward)
                 unroll_data.done.append(d)
                 unroll_data.action.append(action)
                 unroll_data.behavior_policy.append(behavior_policy)
 
                 state = next_state
-                lives = info['ale.lives']
 
                 if done:
                     
