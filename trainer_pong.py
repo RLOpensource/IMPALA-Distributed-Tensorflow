@@ -48,14 +48,18 @@ def main(_):
 
     filters = [shared_job_device, local_job_device]
 
+    input_shape = [84, 84, 4]
+    output_size = 6
+    env_name = 'PongDeterministic-v4'
+
     with tf.device(shared_job_device):
         queue = buffer_queue.FIFOQueue(
-            FLAGS.trajectory, config.input_shape, config.output_size,
+            FLAGS.trajectory, input_shape, output_size,
             FLAGS.queue_size, FLAGS.batch_size, FLAGS.num_actors)
         learner = model.IMPALA(
             trajectory=FLAGS.trajectory,
-            input_shape=config.input_shape,
-            num_action=config.output_size,
+            input_shape=input_shape,
+            num_action=output_size,
             discount_factor=FLAGS.discount_factor,
             start_learning_rate=FLAGS.start_learning_rate,
             end_learning_rate=FLAGS.end_learning_rate,
@@ -96,7 +100,7 @@ def main(_):
                 'trajectory_data',
                 ['state', 'next_state', 'reward', 'done', 'action', 'behavior_policy'])
 
-        env = wrappers.make_uint8_env(config.env_name)
+        env = wrappers.make_uint8_env(env_name)
         if FLAGS.task == 0:
             env = gym.wrappers.Monitor(env, 'save-mov', video_callable=lambda episode_id: episode_id%10==0)
         state = env.reset()
@@ -114,8 +118,6 @@ def main(_):
 
             for _ in range(FLAGS.trajectory):
 
-                env.render()
-
                 action, behavior_policy, max_prob = learner.get_policy_and_action(state)
 
                 episode_step += 1
@@ -125,10 +127,9 @@ def main(_):
 
                 score += reward
 
-                if lives != info['ale.lives']:
+                d = False
+                if reward == -1:
                     d = True
-                else:
-                    d = False
                 
                 unroll_data.state.append(state)
                 unroll_data.next_state.append(next_state)
@@ -138,7 +139,6 @@ def main(_):
                 unroll_data.behavior_policy.append(behavior_policy)
 
                 state = next_state
-                lives = info['ale.lives']
 
                 if done:
                     
