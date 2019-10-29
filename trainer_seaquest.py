@@ -109,12 +109,9 @@ def main(_):
         score = 0
         episode_step = 0
         total_max_prob = 0
-
+        lives = 4
+        
         writer = tensorboardX.SummaryWriter('runs/actor_{}'.format(FLAGS.task))
-
-        import matplotlib
-        matplotlib.use('TkAgg')
-        import matplotlib.pyplot as plt
 
         while True:
 
@@ -131,27 +128,22 @@ def main(_):
 
                 score += reward
 
-                plt.subplot(4,1,1)
-                plt.imshow(state[:, :, 0], cmap='gray')
-                plt.subplot(4,1,2)
-                plt.imshow(state[:, :, 1], cmap='gray')
-                plt.subplot(4,1,3)
-                plt.imshow(state[:, :, 2], cmap='gray')
-                plt.subplot(4,1,4)
-                plt.imshow(state[:, :, 3], cmap='gray')
-                plt.show(block=False)
-                plt.pause(0.0001)
-                plt.clf()
-                print(info, reward, done)
-                
+                if lives != info['ale.lives']:
+                    r = -1
+                    d = True
+                else:
+                    r = reward
+                    d = False
+
                 unroll_data.state.append(state)
                 unroll_data.next_state.append(next_state)
-                unroll_data.reward.append(reward)
-                unroll_data.done.append(done)
+                unroll_data.reward.append(r)
+                unroll_data.done.append(d)
                 unroll_data.action.append(action)
                 unroll_data.behavior_policy.append(behavior_policy)
 
                 state = next_state
+                lives = info['ale.lives']
 
                 if done:
                     
@@ -163,7 +155,7 @@ def main(_):
                     score = 0
                     episode_step = 0
                     total_max_prob = 0
-                    lives = 5
+                    lives = 4
                     state = env.reset()
 
             queue.append_to_queue(
