@@ -137,8 +137,6 @@ def main(_):
                     r = reward
                     d = False
 
-                print(lives, info['ale.lives'], r, d)
-
                 unroll_data.state.append(state)
                 unroll_data.next_state.append(next_state)
                 unroll_data.reward.append(r)
