@@ -61,6 +61,7 @@ wait
   <img src="source/pong/openaigym.video.0.20974.video000440.gif" width="33%" height='300'>
   <img src="source/seaquest/openaigym.video.0.27728.video001090.gif" width="33%" height='300'>
   <img src="source/spaceinvader/openaigym.video.0.30111.video004130.gif" width="33%" height='300'>
+  <img src="source/boxing/openaigym.video.0.3092.video000930.gif" width="33%" height='300'>
 </div>
 
 ### Plotting
@@ -91,6 +92,13 @@ wait
 <div align="center">
   <img src="source/spaceinvader/invader_1.png" width="100%" height="150">
   <img src="source/spaceinvader/invader_2.png" width="100%" height="150">
+</div>
+
+* Boxing
+
+<div align="center">
+  <img src="source/boxing/boxing_1.png" width="100%" height="150">
+  <img src="source/boxing/boxing_2.png" width="100%" height="150">
 </div>
 
 
