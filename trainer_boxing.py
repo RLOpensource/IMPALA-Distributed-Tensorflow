@@ -109,7 +109,6 @@ def main(_):
         score = 0
         episode_step = 0
         total_max_prob = 0
-        lives = 5
 
         writer = tensorboardX.SummaryWriter('runs/actor_{}'.format(FLAGS.task))
 
@@ -119,6 +118,8 @@ def main(_):
 
             for _ in range(FLAGS.trajectory):
 
+                env.render()
+
                 action, behavior_policy, max_prob = learner.get_policy_and_action(state)
 
                 episode_step += 1
@@ -127,23 +128,15 @@ def main(_):
                 next_state, reward, done, info = env.step(action)
 
                 score += reward
-
-                if lives != info['ale.lives']:
-                    r = -1
-                    d = True
-                else:
-                    r = reward
-                    d = False
                 
                 unroll_data.state.append(state)
                 unroll_data.next_state.append(next_state)
-                unroll_data.reward.append(r)
-                unroll_data.done.append(d)
+                unroll_data.reward.append(reward)
+                unroll_data.done.append(done)
                 unroll_data.action.append(action)
                 unroll_data.behavior_policy.append(behavior_policy)
 
                 state = next_state
-                lives = info['ale.lives']
 
                 if done:
                     
@@ -155,7 +148,6 @@ def main(_):
                     score = 0
                     episode_step = 0
                     total_max_prob = 0
-                    lives = 5
                     state = env.reset()
 
             queue.append_to_queue(
