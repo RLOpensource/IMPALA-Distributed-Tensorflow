@@ -118,8 +118,6 @@ def main(_):
 
             for _ in range(FLAGS.trajectory):
 
-                env.render()
-
                 action, behavior_policy, max_prob = learner.get_policy_and_action(state)
 
                 episode_step += 1
