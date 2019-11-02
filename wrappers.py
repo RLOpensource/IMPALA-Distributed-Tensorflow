@@ -128,3 +128,11 @@ def make_uint8_env(env_name):
     env = ImageToPyTorch(env)
     env = BufferWrapper(env, 4)
     return ScaledUint8Frame(env)
+
+def make_uint8_env_no_fire(env_name):
+    env = gym.make(env_name)
+    env = MaxAndSkipEnv(env)
+    env = ProcessFrame84(env)
+    env = ImageToPyTorch(env)
+    env = BufferWrapper(env, 4)
+    return ScaledUint8Frame(env)
