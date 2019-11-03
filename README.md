@@ -60,8 +60,8 @@ wait
 |:---:|:---:|:---:|:---:|
 | ![Breakout](source/breakout/openaigym.video.0.25421.video001440.gif) | ![Pong](source/pong/openaigym.video.0.20974.video000440.gif) | ![Seaquest](source/seaquest/openaigym.video.0.27728.video001090.gif) | ![Space-Invader](source/spaceinvader/openaigym.video.0.30111.video004130.gif) |
 | Breakout | Pong | Seaquest | Space-Invader |
-| ![Boxing](source/boxing/openaigym.video.0.3092.video000930.gif) | ![Star-Gunner](source/gunner/openaigym.video.0.11850.video001760.gif) | ![KungFu](source/kungfu/openaigym.video.0.22816.video000740.gif)| |
-| Boxing | Star-Gunner | Kung-Fu | ... |
+| ![Boxing](source/boxing/openaigym.video.0.3092.video000930.gif) | ![Star-Gunner](source/gunner/openaigym.video.0.11850.video001760.gif) | ![KungFu](source/kungfu/openaigym.video.0.22816.video000740.gif)|![Demon](source/demon/openaigym.video.0.31852.video000310.gif) |
+| Boxing | Star-Gunner | Kung-Fu | Demon |
 
 ### Plotting
 
@@ -112,6 +112,13 @@ wait
 <div align="center">
   <img src="source/kungfu/kungfu_1.png" width="100%" height="150">
   <img src="source/kungfu/kungfu_2.png" width="100%" height="150">
+</div>
+
+* Demon
+
+<div align="center">
+  <img src="source/demon/demon_1.png" width="100%" height="150">
+  <img src="source/demon/demon_2.png" width="100%" height="150">
 </div>
 
 
