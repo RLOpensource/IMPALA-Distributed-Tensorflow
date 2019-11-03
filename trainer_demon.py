@@ -119,8 +119,6 @@ def main(_):
 
             for _ in range(FLAGS.trajectory):
 
-                env.render()
-
                 action, behavior_policy, max_prob = learner.get_policy_and_action(state)
 
                 episode_step += 1
@@ -136,8 +134,6 @@ def main(_):
                 else:
                     r = reward
                     d = False
-
-                print(lives, info['ale.lives'], r, d)
 
                 unroll_data.state.append(state)
                 unroll_data.next_state.append(next_state)
