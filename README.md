@@ -125,8 +125,8 @@ wait
 
 ### Video
 
-||
-|:---:|
+|||
+|:---:|:---:|
 | ![abs_one](source/gunner/openaigym.video.0.11850.video001760.gif) | ![Pong](source/reward_clipping/asyn_gunner.gif) |
 | abs_one | soft_asymmetric |
 
