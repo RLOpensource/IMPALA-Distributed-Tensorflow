@@ -121,12 +121,31 @@ wait
   <img src="source/demon/demon_2.png" width="100%" height="150">
 </div>
 
+## Compare reward clipping method
+
+### Video
+
+|||||
+|:---:|:---:|:---:|:---:|
+| ![abs_one](source/gunner/openaigym.video.0.11850.video001760.gif) | ![Pong](source/reward_clipping/asyn_gunner.gif) |
+| abs_one | soft_asymmetric |
+
+### Plotting
+|||||
+|:---:|:---:|:---:|:---:|
+| ![abs_one](source/gunner/gunner_1.png)
+![abs_one](source/gunner/gunner_2.png) |
+| abs_one |
+| ![soft_asymmetric](source/reward_clipping/asyn_1.png)
+![soft_asymmetric](source/reward_clipping/asyn_2.png) |
+| soft_asymmetric |
 
 # Todo
 
 - [x] Only CPU Training method
 - [x] Distributed tensorflow
 - [x] Model fix for preventing collapsed
+- [x] Reward Clipping Experiment
 - [ ] Training on GPU, Inference on CPU
 
 # Reference
