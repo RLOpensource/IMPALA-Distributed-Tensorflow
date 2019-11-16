@@ -63,7 +63,8 @@ def build_model(state, trajectory_state, num_action, trajectory):
 
 class IMPALA:
     def __init__(self, trajectory, input_shape, num_action, discount_factor, start_learning_rate,
-                 end_learning_rate, learning_frame, baseline_loss_coef, entropy_coef, gradient_clip_norm):
+                 end_learning_rate, learning_frame, baseline_loss_coef, entropy_coef, gradient_clip_norm,
+                 reward_clipping):
 
         self.input_shape = input_shape
         self.trajectory = trajectory
@@ -83,7 +84,11 @@ class IMPALA:
         self.d_ph = tf.placeholder(tf.bool, shape=[None, self.trajectory])
         self.b_ph = tf.placeholder(tf.float32, shape=[None, self.trajectory, self.num_action])
 
-        self.clipped_r_ph = tf.clip_by_value(self.r_ph, -1.0, 1.0)
+        if reward_clipping == 'abs_one':
+            self.clipped_r_ph = tf.clip_by_value(self.r_ph, -1.0, 1.0)
+        elif reward_clipping == 'soft_asymmetric':
+            squeezed = tf.tanh(self.r_ph / 5.0)
+            self.clipped_r_ph = tf.where(self.r_ph < 0, .3 * squeezed, squeezed) * 5.
 
         self.discounts = tf.to_float(~self.d_ph) * self.discount_factor
 

@@ -66,7 +66,8 @@ def main(_):
             learning_frame=FLAGS.learning_frame,
             baseline_loss_coef=FLAGS.baseline_loss_coef,
             entropy_coef=FLAGS.entropy_coef,
-            gradient_clip_norm=FLAGS.gradient_clip_norm)
+            gradient_clip_norm=FLAGS.gradient_clip_norm,
+            reward_clipping=FLAGS.reward_clipping)
 
     sess = tf.Session(server.target)
     queue.set_session(sess)
