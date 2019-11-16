@@ -125,14 +125,14 @@ wait
 
 ### Video
 
-|||||
-|:---:|:---:|:---:|:---:|
+|||
+|:---:|:---:|
 | ![abs_one](source/gunner/openaigym.video.0.11850.video001760.gif) | ![Pong](source/reward_clipping/asyn_gunner.gif) |
 | abs_one | soft_asymmetric |
 
 ### Plotting
-|||||
-|:---:|:---:|:---:|:---:|
+|||
+|:---:|:---:|
 | ![abs_one](source/gunner/gunner_1.png)
 ![abs_one](source/gunner/gunner_2.png) |
 | abs_one |
