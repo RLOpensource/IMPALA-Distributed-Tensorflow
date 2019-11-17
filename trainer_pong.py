@@ -106,7 +106,7 @@ def main(_):
                 train_step += 1
                 batch = queue.sample_batch()
                 s = time.time()
-                pi_loss, baseline_loss, entropy, learning_rate = actor.train(
+                pi_loss, baseline_loss, entropy, learning_rate = learner.train(
                                                                     state=np.stack(batch.state),
                                                                     reward=np.stack(batch.reward),
                                                                     action=np.stack(batch.action),
@@ -142,7 +142,7 @@ def main(_):
 
             for _ in range(FLAGS.trajectory):
 
-                action, behavior_policy, max_prob = learner.get_policy_and_action(state)
+                action, behavior_policy, max_prob = actor.get_policy_and_action(state)
 
                 episode_step += 1
                 total_max_prob += max_prob

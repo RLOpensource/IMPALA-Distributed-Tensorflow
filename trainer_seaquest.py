@@ -106,7 +106,7 @@ def main(_):
                 train_step += 1
                 batch = queue.sample_batch()
                 s = time.time()
-                pi_loss, baseline_loss, entropy, learning_rate = actor.train(
+                pi_loss, baseline_loss, entropy, learning_rate = learner.train(
                                                                     state=np.stack(batch.state),
                                                                     reward=np.stack(batch.reward),
                                                                     action=np.stack(batch.action),
