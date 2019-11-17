@@ -138,6 +138,7 @@ def main(_):
         while True:
 
             unroll_data = trajectory_data([], [], [], [], [], [])
+            actor.parameter_sync()
 
             for _ in range(FLAGS.trajectory):
 
