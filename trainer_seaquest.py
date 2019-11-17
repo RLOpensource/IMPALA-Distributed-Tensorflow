@@ -67,11 +67,33 @@ def main(_):
             baseline_loss_coef=FLAGS.baseline_loss_coef,
             entropy_coef=FLAGS.entropy_coef,
             gradient_clip_norm=FLAGS.gradient_clip_norm,
-            reward_clipping=FLAGS.reward_clipping)
+            reward_clipping=FLAGS.reward_clipping,
+            model_name='learner',
+            learner_name='learner')
+
+    with tf.device(local_job_device):
+        if not is_learner:
+            actor = model.IMPALA(
+                trajectory=FLAGS.trajectory,
+                input_shape=input_shape,
+                num_action=output_size,
+                discount_factor=FLAGS.discount_factor,
+                start_learning_rate=FLAGS.start_learning_rate,
+                end_learning_rate=FLAGS.end_learning_rate,
+                learning_frame=FLAGS.learning_frame,
+                baseline_loss_coef=FLAGS.baseline_loss_coef,
+                entropy_coef=FLAGS.entropy_coef,
+                gradient_clip_norm=FLAGS.gradient_clip_norm,
+                reward_clipping=FLAGS.reward_clipping,
+                model_name='actor_{}'.format(FLAGS.task),
+                learner_name='learner')
 
     sess = tf.Session(server.target)
     queue.set_session(sess)
     learner.set_session(sess)
+
+    if not is_learner:
+        actor.set_session(sess)
 
     if is_learner:
 
@@ -84,7 +106,7 @@ def main(_):
                 train_step += 1
                 batch = queue.sample_batch()
                 s = time.time()
-                pi_loss, baseline_loss, entropy, learning_rate = learner.train(
+                pi_loss, baseline_loss, entropy, learning_rate = actor.train(
                                                                     state=np.stack(batch.state),
                                                                     reward=np.stack(batch.reward),
                                                                     action=np.stack(batch.action),
@@ -120,7 +142,7 @@ def main(_):
 
             for _ in range(FLAGS.trajectory):
 
-                action, behavior_policy, max_prob = learner.get_policy_and_action(state)
+                action, behavior_policy, max_prob = actor.get_policy_and_action(state)
 
                 episode_step += 1
                 total_max_prob += max_prob

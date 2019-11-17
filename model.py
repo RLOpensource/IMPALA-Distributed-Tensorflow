@@ -3,6 +3,24 @@ import numpy as np
 
 import vtrace
 
+def copy_src_to_dst(from_scope, to_scope):
+    """Creates a copy variable weights operation
+    Args:
+        from_scope (str): The name of scope to copy from
+            It should be "global"
+        to_scope (str): The name of scope to copy to
+            It should be "thread-{}"
+    Returns:
+        list: Each element is a copy operation
+    """
+    from_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, from_scope)
+    to_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, to_scope)
+
+    op_holder = []
+    for from_var, to_var in zip(from_vars, to_vars):
+        op_holder.append(to_var.assign(from_var))
+    return op_holder
+
 def network(x, num_action):
     x = tf.layers.conv2d(inputs=x, filters=32, kernel_size=[8, 8], strides=[4, 4], padding='VALID', activation=tf.nn.relu)
     x = tf.layers.conv2d(inputs=x, filters=64, kernel_size=[4, 4], strides=[2, 2], padding='VALID', activation=tf.nn.relu)
@@ -64,7 +82,7 @@ def build_model(state, trajectory_state, num_action, trajectory):
 class IMPALA:
     def __init__(self, trajectory, input_shape, num_action, discount_factor, start_learning_rate,
                  end_learning_rate, learning_frame, baseline_loss_coef, entropy_coef, gradient_clip_norm,
-                 reward_clipping):
+                 reward_clipping, model_name, learner_name):
 
         self.input_shape = input_shape
         self.trajectory = trajectory
@@ -77,65 +95,72 @@ class IMPALA:
         self.entropy_coef = entropy_coef
         self.gradient_clip_norm = gradient_clip_norm
 
-        self.s_ph = tf.placeholder(tf.float32, shape=[None, *self.input_shape])
-        self.t_s_ph = tf.placeholder(tf.float32, shape=[None, self.trajectory, *self.input_shape])
-        self.a_ph = tf.placeholder(tf.int32, shape=[None, self.trajectory])
-        self.r_ph = tf.placeholder(tf.float32, shape=[None, self.trajectory])
-        self.d_ph = tf.placeholder(tf.bool, shape=[None, self.trajectory])
-        self.b_ph = tf.placeholder(tf.float32, shape=[None, self.trajectory, self.num_action])
+        with tf.variable_scope(model_name):
 
-        if reward_clipping == 'abs_one':
-            self.clipped_r_ph = tf.clip_by_value(self.r_ph, -1.0, 1.0)
-        elif reward_clipping == 'soft_asymmetric':
-            squeezed = tf.tanh(self.r_ph / 5.0)
-            self.clipped_r_ph = tf.where(self.r_ph < 0, .3 * squeezed, squeezed) * 5.
+            self.s_ph = tf.placeholder(tf.float32, shape=[None, *self.input_shape])
+            self.t_s_ph = tf.placeholder(tf.float32, shape=[None, self.trajectory, *self.input_shape])
+            self.a_ph = tf.placeholder(tf.int32, shape=[None, self.trajectory])
+            self.r_ph = tf.placeholder(tf.float32, shape=[None, self.trajectory])
+            self.d_ph = tf.placeholder(tf.bool, shape=[None, self.trajectory])
+            self.b_ph = tf.placeholder(tf.float32, shape=[None, self.trajectory, self.num_action])
 
-        self.discounts = tf.to_float(~self.d_ph) * self.discount_factor
+            if reward_clipping == 'abs_one':
+                self.clipped_r_ph = tf.clip_by_value(self.r_ph, -1.0, 1.0)
+            elif reward_clipping == 'soft_asymmetric':
+                squeezed = tf.tanh(self.r_ph / 5.0)
+                self.clipped_r_ph = tf.where(self.r_ph < 0, .3 * squeezed, squeezed) * 5.
 
-        self.policy, self.unrolled_first_policy, \
-            self.unrolled_first_value, self.unrolled_middle_policy, \
-                self.unrolled_middle_value, self.unrolled_last_policy, \
-                    self.unrolled_last_value = build_model(state=self.s_ph, trajectory_state=self.t_s_ph,
-                                                           num_action=self.num_action, trajectory=self.trajectory)
+            self.discounts = tf.to_float(~self.d_ph) * self.discount_factor
 
-        self.unrolled_first_action, self.unrolled_middle_action, self.unrolled_last_action = vtrace.split_data(self.a_ph)
-        self.unrolled_first_reward, self.unrolled_middle_reward, self.unrolled_last_reward = vtrace.split_data(self.clipped_r_ph)
-        self.unrolled_first_discounts, self.unrolled_middle_discounts, self.unrolled_last_discounts = vtrace.split_data(self.discounts)
-        self.unrolled_first_behavior_policy, self.unrolled_middle_behavior_policy, self.unrolled_last_behavior_policy = vtrace.split_data(self.b_ph)
+            self.policy, self.unrolled_first_policy, \
+                self.unrolled_first_value, self.unrolled_middle_policy, \
+                    self.unrolled_middle_value, self.unrolled_last_policy, \
+                        self.unrolled_last_value = build_model(state=self.s_ph, trajectory_state=self.t_s_ph,
+                                                            num_action=self.num_action, trajectory=self.trajectory)
 
-        self.vs, self.clipped_rho = vtrace.from_softmax(
-                                        behavior_policy_softmax=self.unrolled_first_behavior_policy, target_policy_softmax=self.unrolled_first_policy,
-                                        actions=self.unrolled_first_action, discounts=self.unrolled_first_discounts, rewards=self.unrolled_first_reward,
-                                        values=self.unrolled_first_value, next_values=self.unrolled_middle_value, action_size=self.num_action)
+            self.unrolled_first_action, self.unrolled_middle_action, self.unrolled_last_action = vtrace.split_data(self.a_ph)
+            self.unrolled_first_reward, self.unrolled_middle_reward, self.unrolled_last_reward = vtrace.split_data(self.clipped_r_ph)
+            self.unrolled_first_discounts, self.unrolled_middle_discounts, self.unrolled_last_discounts = vtrace.split_data(self.discounts)
+            self.unrolled_first_behavior_policy, self.unrolled_middle_behavior_policy, self.unrolled_last_behavior_policy = vtrace.split_data(self.b_ph)
 
-        self.vs_plus_1, _ = vtrace.from_softmax(
-                                        behavior_policy_softmax=self.unrolled_middle_behavior_policy, target_policy_softmax=self.unrolled_middle_policy,
-                                        actions=self.unrolled_middle_action, discounts=self.unrolled_middle_discounts, rewards=self.unrolled_middle_reward,
-                                        values=self.unrolled_middle_value, next_values=self.unrolled_last_value, action_size=self.num_action)
+            self.vs, self.clipped_rho = vtrace.from_softmax(
+                                            behavior_policy_softmax=self.unrolled_first_behavior_policy, target_policy_softmax=self.unrolled_first_policy,
+                                            actions=self.unrolled_first_action, discounts=self.unrolled_first_discounts, rewards=self.unrolled_first_reward,
+                                            values=self.unrolled_first_value, next_values=self.unrolled_middle_value, action_size=self.num_action)
 
-        self.pg_advantage = tf.stop_gradient(
-            self.clipped_rho * \
-                (self.unrolled_first_reward + self.unrolled_first_discounts * self.vs_plus_1 - self.unrolled_first_value))
+            self.vs_plus_1, _ = vtrace.from_softmax(
+                                            behavior_policy_softmax=self.unrolled_middle_behavior_policy, target_policy_softmax=self.unrolled_middle_policy,
+                                            actions=self.unrolled_middle_action, discounts=self.unrolled_middle_discounts, rewards=self.unrolled_middle_reward,
+                                            values=self.unrolled_middle_value, next_values=self.unrolled_last_value, action_size=self.num_action)
 
-        self.pi_loss = vtrace.compute_policy_gradient_loss(
-            softmax=self.unrolled_first_policy,
-            actions=self.unrolled_first_action,
-            advantages=self.pg_advantage,
-            output_size=self.num_action)
-        self.baseline_loss = vtrace.compute_baseline_loss(
-            vs=tf.stop_gradient(self.vs),
-            value=self.unrolled_first_value)
-        self.entropy = vtrace.compute_entropy_loss(
-            softmax=self.unrolled_first_policy)
+            self.pg_advantage = tf.stop_gradient(
+                self.clipped_rho * \
+                    (self.unrolled_first_reward + self.unrolled_first_discounts * self.vs_plus_1 - self.unrolled_first_value))
 
-        self.total_loss = self.pi_loss + self.baseline_loss * self.baseline_loss_coef + self.entropy * self.entropy_coef
+            self.pi_loss = vtrace.compute_policy_gradient_loss(
+                softmax=self.unrolled_first_policy,
+                actions=self.unrolled_first_action,
+                advantages=self.pg_advantage,
+                output_size=self.num_action)
+            self.baseline_loss = vtrace.compute_baseline_loss(
+                vs=tf.stop_gradient(self.vs),
+                value=self.unrolled_first_value)
+            self.entropy = vtrace.compute_entropy_loss(
+                softmax=self.unrolled_first_policy)
 
-        self.num_env_frames = tf.train.get_or_create_global_step()
-        self.learning_rate = tf.train.polynomial_decay(self.start_learning_rate, self.num_env_frames, self.learning_frame, self.end_learning_rate)
-        self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate, decay=0.99, momentum=0, epsilon=0.1)
-        gradients, variable = zip(*self.optimizer.compute_gradients(self.total_loss))
-        gradients, _ = tf.clip_by_global_norm(gradients, self.gradient_clip_norm)
-        self.train_op = self.optimizer.apply_gradients(zip(gradients, variable), global_step=self.num_env_frames)
+            self.total_loss = self.pi_loss + self.baseline_loss * self.baseline_loss_coef + self.entropy * self.entropy_coef
+
+            self.num_env_frames = tf.train.get_or_create_global_step()
+            self.learning_rate = tf.train.polynomial_decay(self.start_learning_rate, self.num_env_frames, self.learning_frame, self.end_learning_rate)
+            self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate, decay=0.99, momentum=0, epsilon=0.1)
+            gradients, variable = zip(*self.optimizer.compute_gradients(self.total_loss))
+            gradients, _ = tf.clip_by_global_norm(gradients, self.gradient_clip_norm)
+            self.train_op = self.optimizer.apply_gradients(zip(gradients, variable), global_step=self.num_env_frames)
+        
+        self.global_to_session = copy_src_to_dst(learner_name, model_name)
+
+    def parameter_sync(self):
+        self.sess.run(self.global_to_session)
 
     def train(self, state, reward, action, done, behavior_policy):
         normalized_state = np.stack(state) / 255
