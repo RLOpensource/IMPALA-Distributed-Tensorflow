@@ -146,6 +146,7 @@ wait
 - [x] Distributed tensorflow
 - [x] Model fix for preventing collapsed
 - [x] Reward Clipping Experiment
+- [x] Parameter copying from global learner
 - [ ] Training on GPU, Inference on CPU
 
 # Reference
