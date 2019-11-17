@@ -49,8 +49,8 @@ def main(_):
     filters = [shared_job_device, local_job_device]
 
     input_shape = [84, 84, 4]
-    output_size = 4
-    env_name = 'BreakoutDeterministic-v4'
+    output_size = 6
+    env_name = 'PongDeterministic-v4'
 
     with tf.device(shared_job_device):
         queue = buffer_queue.FIFOQueue(
@@ -91,7 +91,7 @@ def main(_):
     sess = tf.Session(server.target)
     queue.set_session(sess)
     learner.set_session(sess)
-
+    
     if not is_learner:
         actor.set_session(sess)
 
@@ -118,75 +118,16 @@ def main(_):
                 writer.add_scalar('data/learning_rate', learning_rate, train_step)
                 writer.add_scalar('data/time', time.time() - s, train_step)
     else:
-
-        trajectory_data = collections.namedtuple(
-                'trajectory_data',
-                ['state', 'next_state', 'reward', 'done', 'action', 'behavior_policy'])
-
-        env = wrappers.make_uint8_env(env_name)
-        if FLAGS.task == 0:
-            env = gym.wrappers.Monitor(env, 'save-mov', video_callable=lambda episode_id: episode_id%10==0)
-        state = env.reset()
-
-        episode = 0
-        score = 0
-        episode_step = 0
-        total_max_prob = 0
-        lives = 5
-
-        writer = tensorboardX.SummaryWriter('runs/actor_{}'.format(FLAGS.task))
-
+        state = np.ones([84, 84, 4])
         while True:
-
-            unroll_data = trajectory_data([], [], [], [], [], [])
+            time.sleep(1)
+            _, learner_policy, _ = learner.get_policy_and_action(state)
+            _, actor_policy, _ = actor.get_policy_and_action(state)
+            print('shared job name : {}'.format(shared_job_device))
+            print('local job name : {}'.format(local_job_device))
+            print('learner policy : {}'.format(learner_policy))
+            print('actor {} policy : {}'.format(FLAGS.task, actor_policy))
             actor.parameter_sync()
-
-            for _ in range(FLAGS.trajectory):
-
-                action, behavior_policy, max_prob = learner.get_policy_and_action(state)
-
-                episode_step += 1
-                total_max_prob += max_prob
-
-                next_state, reward, done, info = env.step(action)
-
-                score += reward
-
-                if lives != info['ale.lives']:
-                    r = -1
-                    d = True
-                else:
-                    r = reward
-                    d = False
-                
-                unroll_data.state.append(state)
-                unroll_data.next_state.append(next_state)
-                unroll_data.reward.append(r)
-                unroll_data.done.append(d)
-                unroll_data.action.append(action)
-                unroll_data.behavior_policy.append(behavior_policy)
-
-                state = next_state
-                lives = info['ale.lives']
-
-                if done:
-                    
-                    print(episode, score)
-                    writer.add_scalar('data/prob', total_max_prob / episode_step, episode)
-                    writer.add_scalar('data/score', score, episode)
-                    writer.add_scalar('data/episode_step', episode_step, episode)
-                    episode += 1
-                    score = 0
-                    episode_step = 0
-                    total_max_prob = 0
-                    lives = 5
-                    state = env.reset()
-
-            queue.append_to_queue(
-                task=FLAGS.task, unrolled_state=unroll_data.state,
-                unrolled_next_state=unroll_data.next_state, unrolled_reward=unroll_data.reward,
-                unrolled_done=unroll_data.done, unrolled_action=unroll_data.action,
-                unrolled_behavior_policy=unroll_data.behavior_policy)
 
 if __name__ == '__main__':
     tf.app.run()
