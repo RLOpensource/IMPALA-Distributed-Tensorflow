@@ -21,17 +21,54 @@ def copy_src_to_dst(from_scope, to_scope):
         op_holder.append(to_var.assign(from_var))
     return op_holder
 
+def self_attention(query, key, value):
+    key_dim_size = float(key.get_shape().as_list()[-1])
+    key = tf.transpose(key, perm=[0, 2, 1])
+    S = tf.matmul(query, key) / tf.sqrt(key_dim_size)
+    attention_weight = tf.nn.softmax(S)
+    A = tf.matmul(attention_weight, value)
+    shape = A.get_shape()
+    return A, attention_weight, [s.value for s in shape]
+
+def layer_normalization(x):
+    feature_shape = x.get_shape()[-1:]
+    mean, variance = tf.nn.moments(x, [2], keep_dims=True)
+    beta = tf.Variable(tf.zeros(feature_shape), trainable=False)
+    gamma = tf.Variable(tf.ones(feature_shape), trainable=False)
+    return gamma * (x - mean) / tf.sqrt(variance + 1e-8) + beta
+
+def query_key_value(nnk, shape):
+    flatten = tf.reshape(nnk, [-1, shape[1]*shape[2], shape[3]])
+    after_layer = [tf.layers.dense(inputs=flatten, units=shape[3], activation=tf.nn.relu) for i in range(3)]
+
+    return after_layer[0], after_layer[1], after_layer[2], flatten
+
+def attention_CNN(x):
+    x = tf.layers.conv2d(inputs=x, filters=32, kernel_size=[8, 8], strides=[2, 2], padding='VALID', activation=tf.nn.relu)
+    shape = x.get_shape()
+    return x, [s.value for s in shape]
+
+def residual(x, inp, residual_time):
+    for i in range(residual_time):
+        x = x + inp
+        x = layer_normalization(x)
+    return x
+
+def feature_wise_max(x):
+    return tf.reduce_max(x, axis=2)
+
 def network(x, num_action):
-    x = tf.layers.conv2d(inputs=x, filters=32, kernel_size=[8, 8], strides=[4, 4], padding='VALID', activation=tf.nn.relu)
-    x = tf.layers.conv2d(inputs=x, filters=64, kernel_size=[4, 4], strides=[2, 2], padding='VALID', activation=tf.nn.relu)
-    x = tf.layers.conv2d(inputs=x, filters=64, kernel_size=[3, 3], strides=[1, 1], padding='VALID', activation=tf.nn.relu)
-    x = tf.layers.flatten(x)
-    x = tf.layers.dense(inputs=x, units=1024, activation=tf.nn.relu)
-    actor = tf.layers.dense(inputs=x, units=1024, activation=tf.nn.relu)
-    actor = tf.layers.dense(inputs=actor, units=256, activation=tf.nn.relu)
+    x, shape = attention_CNN(x)
+    query, key, value, E = query_key_value(x, shape)
+    normalized_query = layer_normalization(query)
+    normalized_key = layer_normalization(key)
+    normalized_value = layer_normalization(value)
+    A, attention_weight, shape = self_attention(normalized_query, normalized_key, normalized_value)
+    E_hat = residual(A, E, 2)
+    max_E_hat = feature_wise_max(E_hat)
+    actor = tf.layers.dense(inputs=max_E_hat, units=256, activation=tf.nn.relu)
     actor = tf.layers.dense(inputs=actor, units=num_action, activation=tf.nn.softmax)
-    critic = tf.layers.dense(inputs=x, units=1024, activation=tf.nn.relu)
-    critic = tf.layers.dense(inputs=critic, units=256, activation=tf.nn.relu)
+    critic = tf.layers.dense(inputs=max_E_hat, units=256, activation=tf.nn.relu)
     critic = tf.squeeze(tf.layers.dense(inputs=critic, units=1, activation=None), axis=1)
     
     return actor, critic
