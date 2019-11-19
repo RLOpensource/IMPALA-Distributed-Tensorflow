@@ -140,6 +140,17 @@ wait
 ![soft_asymmetric](source/reward_clipping/asyn_2.png) |
 | soft_asymmetric |
 
+## Is Attention Really Working?
+
+|||
+|:---:|:---:|
+| ![abs_one](source/attention/attention_1.gif) |
+| abs_one |
+
+* Above Blocks are ignored.
+* Ball and Bar are attentioned.
+* Empty space are attentioned because of less trained.
+
 # Todo
 
 - [x] Only CPU Training method
@@ -147,6 +158,7 @@ wait
 - [x] Model fix for preventing collapsed
 - [x] Reward Clipping Experiment
 - [x] Parameter copying from global learner
+- [x] Add Relational Reinforcement Learning
 - [ ] Training on GPU, Inference on CPU
 
 # Reference
