@@ -117,6 +117,8 @@ def main(_):
                 writer.add_scalar('data/entropy', entropy, train_step)
                 writer.add_scalar('data/learning_rate', learning_rate, train_step)
                 writer.add_scalar('data/time', time.time() - s, train_step)
+                if train_step % 1000 == 0:
+                    learner.save_weight('breakout/model')
     else:
 
         trajectory_data = collections.namedtuple(
