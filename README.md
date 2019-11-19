@@ -145,7 +145,6 @@ wait
 |||
 |:---:|:---:|
 | ![abs_one](source/attention/attention_1.gif) |
-| abs_one |
 
 * Above Blocks are ignored.
 * Ball and Bar are attentioned.
