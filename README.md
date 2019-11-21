@@ -158,6 +158,7 @@ wait
 - [x] Reward Clipping Experiment
 - [x] Parameter copying from global learner
 - [x] Add Relational Reinforcement Learning
+- [ ] Add Recurrent Model
 - [ ] Training on GPU, Inference on CPU
 
 # Reference
