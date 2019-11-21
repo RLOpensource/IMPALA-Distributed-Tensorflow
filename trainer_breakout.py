@@ -111,24 +111,27 @@ def main(_):
                                                                     reward=np.stack(batch.reward),
                                                                     action=np.stack(batch.action),
                                                                     done=np.stack(batch.done),
-                                                                    behavior_policy=np.stack(batch.behavior_policy))
+                                                                    behavior_policy=np.stack(batch.behavior_policy),
+                                                                    previous_action=np.stack(batch.previous_action))
                 writer.add_scalar('data/pi_loss', pi_loss, train_step)
                 writer.add_scalar('data/baseline_loss', baseline_loss, train_step)
                 writer.add_scalar('data/entropy', entropy, train_step)
                 writer.add_scalar('data/learning_rate', learning_rate, train_step)
                 writer.add_scalar('data/time', time.time() - s, train_step)
+                print('training')
                 if train_step % 1000 == 0:
                     learner.save_weight('breakout/model')
     else:
 
         trajectory_data = collections.namedtuple(
                 'trajectory_data',
-                ['state', 'next_state', 'reward', 'done', 'action', 'behavior_policy'])
+                ['state', 'next_state', 'reward', 'done', 'action', 'behavior_policy', 'previous_action'])
 
         env = wrappers.make_uint8_env(env_name)
         if FLAGS.task == 0:
             env = gym.wrappers.Monitor(env, 'save-mov', video_callable=lambda episode_id: episode_id%10==0)
         state = env.reset()
+        previous_action = 0
 
         episode = 0
         score = 0
@@ -140,12 +143,12 @@ def main(_):
 
         while True:
 
-            unroll_data = trajectory_data([], [], [], [], [], [])
+            unroll_data = trajectory_data([], [], [], [], [], [], [])
             actor.parameter_sync()
 
             for _ in range(FLAGS.trajectory):
 
-                action, behavior_policy, max_prob = actor.get_policy_and_action(state)
+                action, behavior_policy, max_prob = actor.get_policy_and_action(state, previous_action)
 
                 episode_step += 1
                 total_max_prob += max_prob
@@ -167,8 +170,10 @@ def main(_):
                 unroll_data.done.append(d)
                 unroll_data.action.append(action)
                 unroll_data.behavior_policy.append(behavior_policy)
+                unroll_data.previous_action.append(previous_action)
 
                 state = next_state
+                previous_action = action
                 lives = info['ale.lives']
 
                 if done:
@@ -183,12 +188,14 @@ def main(_):
                     total_max_prob = 0
                     lives = 5
                     state = env.reset()
+                    previous_action = 0
 
             queue.append_to_queue(
                 task=FLAGS.task, unrolled_state=unroll_data.state,
                 unrolled_next_state=unroll_data.next_state, unrolled_reward=unroll_data.reward,
                 unrolled_done=unroll_data.done, unrolled_action=unroll_data.action,
-                unrolled_behavior_policy=unroll_data.behavior_policy)
+                unrolled_behavior_policy=unroll_data.behavior_policy,
+                unrolled_previous_action=unroll_data.previous_action)
 
 if __name__ == '__main__':
     tf.app.run()

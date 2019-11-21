@@ -59,7 +59,7 @@ def residual(x, inp, residual_time):
 def feature_wise_max(x):
     return tf.reduce_max(x, axis=2)
 
-def network(x, num_action):
+def network(x, previous_action, num_action):
     x, shape = attention_CNN(x)
     query, key, value, E = query_key_value(x, shape)
     normalized_query = layer_normalization(query)
@@ -68,6 +68,8 @@ def network(x, num_action):
     A, attention_weight, shape = self_attention(normalized_query, normalized_key, normalized_value)
     E_hat = residual(A, E, 2)
     max_E_hat = feature_wise_max(E_hat)
+    previous_action_embedding = tf.layers.dense(inputs=previous_action, units=8*num_action, activation=tf.nn.relu)
+    max_E_hat = tf.concat([previous_action_embedding, max_E_hat], axis=1)
     actor = tf.layers.dense(inputs=max_E_hat, units=256, activation=tf.nn.relu)
     actor = tf.layers.dense(inputs=actor, units=256, activation=tf.nn.relu)
     actor = tf.layers.dense(inputs=actor, units=num_action, activation=tf.nn.softmax)
@@ -77,20 +79,31 @@ def network(x, num_action):
     
     return actor, critic, attention_weight
 
-def build_model(state, trajectory_state, num_action, trajectory):
+def build_model(state, trajectory_state,
+                previous_action, trajectory_previous_action,
+                num_action, trajectory):
+
+    previous_action = tf.one_hot(previous_action, num_action)
+    trajectory_previous_action = tf.one_hot(trajectory_previous_action, num_action)
 
     with tf.variable_scope('impala', reuse=tf.AUTO_REUSE):
-        policy, _, attention = network(state, num_action)
+        policy, _, attention = network(state, previous_action, num_action)
 
     unrolled_first_state = trajectory_state[:, :-2]
     unrolled_middle_state = trajectory_state[:, 1:-1]
     unrolled_last_state = trajectory_state[:, 2:]
 
+    unrolled_first_previous_action = trajectory_previous_action[:, :-2]
+    unrolled_middle_previous_action = trajectory_previous_action[:, 1:-1]
+    unrolled_last_previous_action = trajectory_previous_action[:, 2:]
+
     unrolled_first_policy = []
     unrolled_first_value = []
     for i in range(trajectory - 2):
         with tf.variable_scope('impala', reuse=tf.AUTO_REUSE):
-            p, v, _ = network(unrolled_first_state[:, i], num_action)
+            p, v, _ = network(unrolled_first_state[:, i],
+                              unrolled_first_previous_action[:, i],
+                              num_action)
             unrolled_first_policy.append(p)
             unrolled_first_value.append(v)
     unrolled_first_policy = tf.stack(unrolled_first_policy, axis=1)
@@ -100,7 +113,9 @@ def build_model(state, trajectory_state, num_action, trajectory):
     unrolled_middle_value = []
     for i in range(trajectory - 2):
         with tf.variable_scope('impala', reuse=tf.AUTO_REUSE):
-            p, v, _ = network(unrolled_middle_state[:, i], num_action)
+            p, v, _ = network(unrolled_middle_state[:, i],
+                              unrolled_middle_previous_action[:, i],
+                            num_action)
             unrolled_middle_policy.append(p)
             unrolled_middle_value.append(v)
     unrolled_middle_policy = tf.stack(unrolled_middle_policy, axis=1)
@@ -110,7 +125,9 @@ def build_model(state, trajectory_state, num_action, trajectory):
     unrolled_last_value = []
     for i in range(trajectory - 2):
         with tf.variable_scope('impala', reuse=tf.AUTO_REUSE):
-            p, v, _ = network(unrolled_last_state[:, i], num_action)
+            p, v, _ = network(unrolled_last_state[:, i],
+                              unrolled_last_previous_action[:, i],
+                            num_action)
             unrolled_last_policy.append(p)
             unrolled_last_value.append(v)
     unrolled_last_policy = tf.stack(unrolled_last_policy, axis=1)
@@ -139,7 +156,9 @@ class IMPALA:
         with tf.variable_scope(model_name):
 
             self.s_ph = tf.placeholder(tf.float32, shape=[None, *self.input_shape])
+            self.pa_ph = tf.placeholder(tf.int32, shape=[None])
             self.t_s_ph = tf.placeholder(tf.float32, shape=[None, self.trajectory, *self.input_shape])
+            self.t_pa_ph = tf.placeholder(tf.int32, shape=[None, self.trajectory])
             self.a_ph = tf.placeholder(tf.int32, shape=[None, self.trajectory])
             self.r_ph = tf.placeholder(tf.float32, shape=[None, self.trajectory])
             self.d_ph = tf.placeholder(tf.bool, shape=[None, self.trajectory])
@@ -157,6 +176,7 @@ class IMPALA:
                 self.unrolled_first_value, self.unrolled_middle_policy, \
                     self.unrolled_middle_value, self.unrolled_last_policy, \
                         self.unrolled_last_value, self.attention = build_model(state=self.s_ph, trajectory_state=self.t_s_ph,
+                                                                    previous_action=self.pa_ph, trajectory_previous_action=self.t_pa_ph,
                                                                     num_action=self.num_action, trajectory=self.trajectory)
 
             self.unrolled_first_action, self.unrolled_middle_action, self.unrolled_last_action = vtrace.split_data(self.a_ph)
@@ -210,10 +230,11 @@ class IMPALA:
     def parameter_sync(self):
         self.sess.run(self.global_to_session)
 
-    def train(self, state, reward, action, done, behavior_policy):
+    def train(self, state, reward, action, done, behavior_policy, previous_action):
         normalized_state = np.stack(state) / 255
         feed_dict={
             self.t_s_ph: normalized_state,
+            self.t_pa_ph: previous_action,
             self.r_ph: reward,
             self.a_ph: action,
             self.d_ph: done,
@@ -225,16 +246,20 @@ class IMPALA:
         
         return pi_loss, baseline_loss, entropy, learning_rate
 
-    def get_attention(self, state):
+    def get_attention(self, state, previous_action):
         normalized_state = np.stack(state) / 255
         attention = self.sess.run(
-                self.attention, feed_dict={self.s_ph: [normalized_state]})[0]
+                self.attention, feed_dict={
+                    self.s_ph: [normalized_state],
+                    self.pa_ph: [previous_action]})[0]
         return attention
 
-    def get_policy_and_action(self, state):
+    def get_policy_and_action(self, state, previous_action):
         normalized_state = np.stack(state) / 255
         policy = self.sess.run(
-            self.policy, feed_dict={self.s_ph: [normalized_state]})[0]
+            self.policy, feed_dict={
+                self.s_ph: [normalized_state],
+                self.pa_ph: [previous_action]})[0]
         action = np.random.choice(self.num_action, p=policy)
         return action, policy, max(policy)
 
