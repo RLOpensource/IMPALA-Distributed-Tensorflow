@@ -49,7 +49,8 @@ def main(_):
     filters = [shared_job_device, local_job_device]
 
     input_shape = [84, 84, 4]
-    output_size = 4
+    output_size = 18
+    available_output_size = 4
     env_name = 'BreakoutDeterministic-v4'
 
     with tf.device(shared_job_device):
@@ -139,7 +140,7 @@ def main(_):
         total_max_prob = 0
         lives = 5
 
-        writer = tensorboardX.SummaryWriter('runs/actor_{}'.format(FLAGS.task))
+        writer = tensorboardX.SummaryWriter('runs/{}/actor_{}'.format(env_name, FLAGS.task))
 
         while True:
 
@@ -153,7 +154,7 @@ def main(_):
                 episode_step += 1
                 total_max_prob += max_prob
 
-                next_state, reward, done, info = env.step(action)
+                next_state, reward, done, info = env.step(action % available_output_size)
 
                 score += reward
 

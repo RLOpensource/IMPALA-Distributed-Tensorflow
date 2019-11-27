@@ -48,7 +48,8 @@ def main(_):
 
     filters = [shared_job_device, local_job_device]
 
-    output_size = 6
+    output_size = 18
+    available_output_size = 6
     env_name = 'SpaceInvadersDeterministic-v4'
     input_shape = [84, 84, 4]
 
@@ -136,7 +137,7 @@ def main(_):
         total_max_prob = 0
         lives = 3
         
-        writer = tensorboardX.SummaryWriter('runs/actor_{}'.format(FLAGS.task))
+        writer = tensorboardX.SummaryWriter('runs/{}/actor_{}'.format(env_name, FLAGS.task))
 
         while True:
 
@@ -150,7 +151,7 @@ def main(_):
                 episode_step += 1
                 total_max_prob += max_prob
 
-                next_state, reward, done, info = env.step(action)
+                next_state, reward, done, info = env.step(action % available_output_size)
 
                 score += reward
 

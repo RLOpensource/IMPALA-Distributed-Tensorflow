@@ -50,6 +50,7 @@ def main(_):
 
     input_shape = [84, 84, 4]
     output_size = 18
+    available_output_size = 18
     env_name = 'SeaquestDeterministic-v4'
 
     with tf.device(shared_job_device):
@@ -136,7 +137,7 @@ def main(_):
         total_max_prob = 0
         lives = 4
         
-        writer = tensorboardX.SummaryWriter('runs/actor_{}'.format(FLAGS.task))
+        writer = tensorboardX.SummaryWriter('runs/{}/actor_{}'.format(env_name, FLAGS.task))
 
         while True:
 
@@ -150,7 +151,7 @@ def main(_):
                 episode_step += 1
                 total_max_prob += max_prob
 
-                next_state, reward, done, info = env.step(action)
+                next_state, reward, done, info = env.step(action % available_output_size)
 
                 score += reward
 

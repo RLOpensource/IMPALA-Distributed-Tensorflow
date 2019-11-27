@@ -61,6 +61,18 @@ def feature_wise_max(x):
 
 def network(x, previous_action, num_action):
     x, shape = attention_CNN(x)
+    flatten = tf.layers.flatten(x)
+    previous_action_embedding = tf.layers.dense(inputs=previous_action, units=8*num_action, activation=tf.nn.relu)
+    concat = tf.concat([previous_action_embedding, flatten], axis=1)
+    actor = tf.layers.dense(inputs=concat, units=512, activation=tf.nn.relu)
+    actor = tf.layers.dense(inputs=actor, units=256, activation=tf.nn.relu)
+    actor = tf.layers.dense(inputs=actor, units=num_action, activation=tf.nn.softmax)
+    critic = tf.layers.dense(inputs=concat, units=512, activation=tf.nn.relu)
+    critic = tf.layers.dense(inputs=critic, units=256, activation=tf.nn.relu)
+    critic = tf.squeeze(tf.layers.dense(inputs=critic, units=1, activation=None), axis=1)
+    attention_weight = concat
+    '''
+    x, shape = attention_CNN(x)
     query, key, value, E = query_key_value(x, shape)
     normalized_query = layer_normalization(query)
     normalized_key = layer_normalization(key)
@@ -76,6 +88,7 @@ def network(x, previous_action, num_action):
     critic = tf.layers.dense(inputs=max_E_hat, units=256, activation=tf.nn.relu)
     critic = tf.layers.dense(inputs=critic, units=256, activation=tf.nn.relu)
     critic = tf.squeeze(tf.layers.dense(inputs=critic, units=1, activation=None), axis=1)
+    '''
     
     return actor, critic, attention_weight
 
