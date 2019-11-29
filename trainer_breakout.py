@@ -180,9 +180,9 @@ def main(_):
                 if done:
                     
                     print(episode, score)
-                    writer.add_scalar('data/prob', total_max_prob / episode_step, episode)
-                    writer.add_scalar('data/score', score, episode)
-                    writer.add_scalar('data/episode_step', episode_step, episode)
+                    writer.add_scalar('data/{}/prob'.format(env_name), total_max_prob / episode_step, episode)
+                    writer.add_scalar('data/{}/score'.format(env_name), score, episode)
+                    writer.add_scalar('data/{}/episode_step'.format(env_name), episode_step, episode)
                     episode += 1
                     score = 0
                     episode_step = 0
