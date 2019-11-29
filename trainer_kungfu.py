@@ -48,7 +48,8 @@ def main(_):
 
     filters = [shared_job_device, local_job_device]
 
-    output_size = 14
+    output_size = 18
+    available_output_size = 14
     env_name = 'KungFuMasterDeterministic-v4'
     input_shape = [84, 84, 4]
 
@@ -136,7 +137,7 @@ def main(_):
         total_max_prob = 0
         lives = 4
         
-        writer = tensorboardX.SummaryWriter('runs/actor_{}'.format(FLAGS.task))
+        writer = tensorboardX.SummaryWriter('runs/{}/actor_{}'.format(env_name, FLAGS.task))
 
         while True:
 
@@ -150,7 +151,7 @@ def main(_):
                 episode_step += 1
                 total_max_prob += max_prob
 
-                next_state, reward, done, info = env.step(action)
+                next_state, reward, done, info = env.step(action % available_output_size)
 
                 score += reward
 
@@ -176,9 +177,9 @@ def main(_):
                 if done:
                     
                     print(episode, score)
-                    writer.add_scalar('data/prob', total_max_prob / episode_step, episode)
-                    writer.add_scalar('data/score', score, episode)
-                    writer.add_scalar('data/episode_step', episode_step, episode)
+                    writer.add_scalar('data/{}/prob'.format(env_name), total_max_prob / episode_step, episode)
+                    writer.add_scalar('data/{}/score'.format(env_name), score, episode)
+                    writer.add_scalar('data/{}/episode_step'.format(env_name), episode_step, episode)
                     episode += 1
                     score = 0
                     episode_step = 0
