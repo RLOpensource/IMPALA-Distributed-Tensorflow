@@ -3,10 +3,12 @@
 
 ## Information
 
-* These results are from only 20 threads.
+* These results are from only 32 threads.
+* A total of 32 CPUs were used, 4 environments were configured for each game type, and a total of 8 games were learned.
 * Tensorflow Implementation
+* Use DQN model to inference action
 * Use distributed tensorflow to implement Actor
-* Training with 2 hours
+* Training with 1 day
 * Same parameter of [paper](https://arxiv.org/abs/1802.01561)
 ```
 start learning rate = 0.0006
@@ -32,25 +34,13 @@ opencv-python
 ## Schema
 
 <div align="center">
-  <img src="source/image1.png" width="50%" height='300'>
+  <img src="source/image2.png" width="50%" height='300'>
 </div>
 
 ## How to Run
 
-* learner
-
-```shell
-python trainer.py --num_actors=20 --task=0 --batch_size=32 --queue_size=128 --trajectory=20 --learning_frame=1000000000 --start_learning=0.0006 --end_learning=0.0 --discount_factor=0.99 --entropy_coef=0.05 --baseline_loss_coef=1.0 --gradient_clip_norm=40.0 --job_name=learner --reward_clipping=abs_one &
-```
-
-* actor
-
-```shell
-for i in $(seq 0 19); do
-    python trainer.py --num_actors=20 --task=$i --batch_size=32 --queue_size=128 --trajectory=20 --learning_frame=1000000000 --start_learning=0.0006 --end_learning=0.0 --discount_factor=0.99 --entropy_coef=0.05 --baseline_loss_coef=1.0 --gradient_clip_norm=40.0 --job_name=actor --reward_clipping=abs_one &
-done;
-wait
-```
+* show [start.sh](start.sh)
+* Learning 8 types of games at a time, one of which uses 4 environments.
 
 ## Result
 
@@ -65,61 +55,9 @@ wait
 
 ### Plotting
 
-* Breakout
-  
-<div align="center">
-  <img src="source/breakout/breakout_1.png" width="100%" height='150'>
-  <img src="source/breakout/breakout_2.png" width="100%" height='150'>
-</div>
+![abs_one](source/multitask/result1.png)
+![abs_one](source/multitask/result2.png)
 
-* Pong
-  
-<div align="center">
-  <img src="source/pong/pong_2.png" width="100%" height='150'>
-  <img src="source/pong/pong_1.png" width="100%" height='150'>
-</div>
-
-* Seaquest
-
-<div align="center">
-  <img src="source/seaquest/seaquest_1.png" width="100%" height="150">
-  <img src="source/seaquest/seaquest_2.png" width="100%" height="150">
-</div>
-
-* Space Invader
-
-<div align="center">
-  <img src="source/spaceinvader/invader_1.png" width="100%" height="150">
-  <img src="source/spaceinvader/invader_2.png" width="100%" height="150">
-</div>
-
-* Boxing
-
-<div align="center">
-  <img src="source/boxing/boxing_1.png" width="100%" height="150">
-  <img src="source/boxing/boxing_2.png" width="100%" height="150">
-</div>
-
-* Gunner
-
-<div align="center">
-  <img src="source/gunner/gunner_1.png" width="100%" height="150">
-  <img src="source/gunner/gunner_2.png" width="100%" height="150">
-</div>
-
-* KungFu
-
-<div align="center">
-  <img src="source/kungfu/kungfu_1.png" width="100%" height="150">
-  <img src="source/kungfu/kungfu_2.png" width="100%" height="150">
-</div>
-
-* Demon
-
-<div align="center">
-  <img src="source/demon/demon_1.png" width="100%" height="150">
-  <img src="source/demon/demon_2.png" width="100%" height="150">
-</div>
 
 ## Compare reward clipping method
 
@@ -159,6 +97,7 @@ wait
 - [x] Parameter copying from global learner
 - [x] Add Relational Reinforcement Learning
 - [x] Add Action information to Model
+- [x] Multi Task Learning
 - [ ] Add Recurrent Model
 - [ ] Training on GPU, Inference on CPU
 
