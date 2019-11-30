@@ -128,7 +128,9 @@ def main(_):
 
         trajectory_data = collections.namedtuple(
                 'trajectory_data',
-                ['state', 'next_state', 'reward', 'done', 'action', 'behavior_policy', 'previous_action'])
+                ['state', 'next_state', 'reward', 'done',
+                 'action', 'behavior_policy', 'previous_action',
+                 'initial_h', 'initial_c'])
 
         env = wrappers.make_uint8_env(env_name)
         if FLAGS.task == 0:
@@ -151,7 +153,7 @@ def main(_):
             unroll_data = trajectory_data(
                 [], [], [], [],
                 [], [], [] ,[], [])
-                
+
             actor.parameter_sync()
 
             for _ in range(FLAGS.trajectory):
