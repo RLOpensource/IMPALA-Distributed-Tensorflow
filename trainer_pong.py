@@ -173,7 +173,7 @@ def main(_):
                 
                 unroll_data.state.append(state)
                 unroll_data.next_state.append(next_state)
-                unroll_data.reward.append(r)
+                unroll_data.reward.append(reward)
                 unroll_data.done.append(d)
                 unroll_data.action.append(action)
                 unroll_data.behavior_policy.append(behavior_policy)
