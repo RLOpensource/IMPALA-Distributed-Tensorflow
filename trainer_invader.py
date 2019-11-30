@@ -22,6 +22,7 @@ flags.DEFINE_integer('batch_size', 32, 'how many batch learner should be trainin
 flags.DEFINE_integer('queue_size', 128, 'fifoqueue size')
 flags.DEFINE_integer('trajectory', 20, 'trajectory length')
 flags.DEFINE_integer('learning_frame', int(1e9), 'trajectory length')
+flags.DEFINE_integer('lstm_size', 256, 'lstm_size')
 
 flags.DEFINE_float('start_learning_rate', 0.0006, 'start_learning_rate')
 flags.DEFINE_float('end_learning_rate', 0, 'end_learning_rate')
@@ -56,7 +57,8 @@ def main(_):
     with tf.device(shared_job_device):
         queue = buffer_queue.FIFOQueue(
             FLAGS.trajectory, input_shape, output_size,
-            FLAGS.queue_size, FLAGS.batch_size, FLAGS.num_actors)
+            FLAGS.queue_size, FLAGS.batch_size,
+            FLAGS.num_actors, FLAGS.lstm_size)
         learner = model.IMPALA(
             trajectory=FLAGS.trajectory,
             input_shape=input_shape,
@@ -70,11 +72,11 @@ def main(_):
             gradient_clip_norm=FLAGS.gradient_clip_norm,
             reward_clipping=FLAGS.reward_clipping,
             model_name='learner',
-            learner_name='learner')
-
+            learner_name='learner',
+            lstm_hidden_size=FLAGS.lstm_size)
+    
     with tf.device(local_job_device):
-        if not is_learner:
-            actor = model.IMPALA(
+        actor = model.IMPALA(
                 trajectory=FLAGS.trajectory,
                 input_shape=input_shape,
                 num_action=output_size,
@@ -87,7 +89,8 @@ def main(_):
                 gradient_clip_norm=FLAGS.gradient_clip_norm,
                 reward_clipping=FLAGS.reward_clipping,
                 model_name='actor_{}'.format(FLAGS.task),
-                learner_name='learner')
+                learner_name='learner',
+                lstm_hidden_size=FLAGS.lstm_size)
 
     sess = tf.Session(server.target)
     queue.set_session(sess)
@@ -113,7 +116,9 @@ def main(_):
                                                                     action=np.stack(batch.action),
                                                                     done=np.stack(batch.done),
                                                                     behavior_policy=np.stack(batch.behavior_policy),
-                                                                    previous_action=np.stack(batch.previous_action))
+                                                                    previous_action=np.stack(batch.previous_action),
+                                                                    initial_h=np.stack(batch.previous_h),
+                                                                    initial_c=np.stack(batch.previous_c))
                 writer.add_scalar('data/pi_loss', pi_loss, train_step)
                 writer.add_scalar('data/baseline_loss', baseline_loss, train_step)
                 writer.add_scalar('data/entropy', entropy, train_step)
@@ -123,13 +128,17 @@ def main(_):
 
         trajectory_data = collections.namedtuple(
                 'trajectory_data',
-                ['state', 'next_state', 'reward', 'done', 'action', 'behavior_policy', 'previous_action'])
+                ['state', 'next_state', 'reward', 'done',
+                 'action', 'behavior_policy', 'previous_action',
+                 'initial_h', 'initial_c'])
 
         env = wrappers.make_uint8_env(env_name)
         if FLAGS.task == 0:
             env = gym.wrappers.Monitor(env, 'save-mov', video_callable=lambda episode_id: episode_id%10==0)
         state = env.reset()
         previous_action = 0
+        previous_h = np.zeros([FLAGS.lstm_size])
+        previous_c = np.zeros([FLAGS.lstm_size])
 
         episode = 0
         score = 0
@@ -141,12 +150,16 @@ def main(_):
 
         while True:
 
-            unroll_data = trajectory_data([], [], [], [], [], [], [])
+            unroll_data = trajectory_data(
+                [], [], [], [],
+                [], [], [] ,[], [])
+
             actor.parameter_sync()
 
             for _ in range(FLAGS.trajectory):
 
-                action, behavior_policy, max_prob = actor.get_policy_and_action(state, previous_action)
+                action, behavior_policy, max_prob, h, c = actor.get_policy_and_action(
+                    state, previous_action, previous_h, previous_c)
 
                 episode_step += 1
                 total_max_prob += max_prob
@@ -169,9 +182,13 @@ def main(_):
                 unroll_data.action.append(action)
                 unroll_data.behavior_policy.append(behavior_policy)
                 unroll_data.previous_action.append(previous_action)
+                unroll_data.initial_h.append(previous_h)
+                unroll_data.initial_c.append(previous_c)
 
                 state = next_state
                 previous_action = action
+                previous_h = h
+                previous_c = c
                 lives = info['ale.lives']
 
                 if done:
@@ -187,13 +204,17 @@ def main(_):
                     lives = 3
                     state = env.reset()
                     previous_action = 0
+                    previous_h = np.zeros([FLAGS.lstm_size])
+                    previous_c = np.zeros([FLAGS.lstm_size])
 
             queue.append_to_queue(
                 task=FLAGS.task, unrolled_state=unroll_data.state,
                 unrolled_next_state=unroll_data.next_state, unrolled_reward=unroll_data.reward,
                 unrolled_done=unroll_data.done, unrolled_action=unroll_data.action,
                 unrolled_behavior_policy=unroll_data.behavior_policy,
-                unrolled_previous_action=unroll_data.previous_action)
+                unrolled_previous_action=unroll_data.previous_action,
+                unrolled_previous_h=unroll_data.initial_h,
+                unrolled_previous_c=unroll_data.initial_c)
 
 if __name__ == '__main__':
     tf.app.run()
