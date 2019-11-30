@@ -148,11 +148,10 @@ def main(_):
 
         while True:
 
-            trajectory_data = collections.namedtuple(
-                'trajectory_data',
-                ['state', 'next_state', 'reward', 'done',
-                 'action', 'behavior_policy', 'previous_action',
-                 'initial_h', 'initial_c'])
+            unroll_data = trajectory_data(
+                [], [], [], [],
+                [], [], [] ,[], [])
+                
             actor.parameter_sync()
 
             for _ in range(FLAGS.trajectory):
