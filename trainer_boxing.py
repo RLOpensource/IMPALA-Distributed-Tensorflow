@@ -54,7 +54,7 @@ def main(_):
     available_output_size = 18
     env_name = 'BoxingDeterministic-v4'
 
-    ith tf.device(shared_job_device):
+    with tf.device(shared_job_device):
         queue = buffer_queue.FIFOQueue(
             FLAGS.trajectory, input_shape, output_size,
             FLAGS.queue_size, FLAGS.batch_size,
