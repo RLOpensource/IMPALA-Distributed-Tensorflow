@@ -31,10 +31,16 @@ tensorboardX
 opencv-python
 ```
 
-## Schema
+## Overall Schema
 
 <div align="center">
   <img src="source/image2.png" width="50%" height='300'>
+</div>
+
+## Model Architecture
+
+<div align="center">
+  <img src="source/model_architecture.png" width="100%" height='300'>
 </div>
 
 ## How to Run
@@ -98,7 +104,7 @@ opencv-python
 - [x] Add Relational Reinforcement Learning
 - [x] Add Action information to Model
 - [x] Multi Task Learning
-- [ ] Add Recurrent Model
+- [x] Add Recurrent Model
 - [ ] Training on GPU, Inference on CPU
 
 # Reference
