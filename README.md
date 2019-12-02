@@ -61,8 +61,8 @@ opencv-python
 
 ### Plotting
 
-![abs_one](source/multitask/result1.png)
-![abs_one](source/multitask/result2.png)
+![abs_one](source/multitaskrecurrent/result1.png)
+![abs_one](source/multitaskrecurrent/result2.png)
 
 
 ## Compare reward clipping method
