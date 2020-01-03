@@ -105,7 +105,7 @@ opencv-python
 - [x] Add Action information to Model
 - [x] Multi Task Learning
 - [x] Add Recurrent Model
-- [ ] Training on GPU, Inference on CPU
+- [x] Training on GPU, Inference on CPU
 
 # Reference
 
