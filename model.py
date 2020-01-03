@@ -155,69 +155,71 @@ class IMPALA:
 
         with tf.variable_scope(model_name):
 
-            self.s_ph = tf.placeholder(tf.float32, shape=[None, *self.input_shape])
-            self.pa_ph = tf.placeholder(tf.int32, shape=[None])
-            self.initial_h_ph = tf.placeholder(tf.float32, shape=[None, self.lstm_hidden_size])
-            self.initial_c_ph = tf.placeholder(tf.float32, shape=[None, self.lstm_hidden_size])
+            with tf.device('cpu'):
 
-            self.t_s_ph = tf.placeholder(tf.float32, shape=[None, self.trajectory, *self.input_shape])
-            self.t_pa_ph = tf.placeholder(tf.int32, shape=[None, self.trajectory])
-            self.t_initial_h_ph = tf.placeholder(tf.float32, shape=[None, self.trajectory, self.lstm_hidden_size])
-            self.t_initial_c_ph = tf.placeholder(tf.float32, shape=[None, self.trajectory, self.lstm_hidden_size])
-            self.a_ph = tf.placeholder(tf.int32, shape=[None, self.trajectory])
-            self.r_ph = tf.placeholder(tf.float32, shape=[None, self.trajectory])
-            self.d_ph = tf.placeholder(tf.bool, shape=[None, self.trajectory])
-            self.b_ph = tf.placeholder(tf.float32, shape=[None, self.trajectory, self.num_action])
+                self.s_ph = tf.placeholder(tf.float32, shape=[None, *self.input_shape])
+                self.pa_ph = tf.placeholder(tf.int32, shape=[None])
+                self.initial_h_ph = tf.placeholder(tf.float32, shape=[None, self.lstm_hidden_size])
+                self.initial_c_ph = tf.placeholder(tf.float32, shape=[None, self.lstm_hidden_size])
 
-            if reward_clipping == 'abs_one':
-                self.clipped_r_ph = tf.clip_by_value(self.r_ph, -1.0, 1.0)
-            elif reward_clipping == 'soft_asymmetric':
-                squeezed = tf.tanh(self.r_ph / 5.0)
-                self.clipped_r_ph = tf.where(self.r_ph < 0, .3 * squeezed, squeezed) * 5.
+                self.t_s_ph = tf.placeholder(tf.float32, shape=[None, self.trajectory, *self.input_shape])
+                self.t_pa_ph = tf.placeholder(tf.int32, shape=[None, self.trajectory])
+                self.t_initial_h_ph = tf.placeholder(tf.float32, shape=[None, self.trajectory, self.lstm_hidden_size])
+                self.t_initial_c_ph = tf.placeholder(tf.float32, shape=[None, self.trajectory, self.lstm_hidden_size])
+                self.a_ph = tf.placeholder(tf.int32, shape=[None, self.trajectory])
+                self.r_ph = tf.placeholder(tf.float32, shape=[None, self.trajectory])
+                self.d_ph = tf.placeholder(tf.bool, shape=[None, self.trajectory])
+                self.b_ph = tf.placeholder(tf.float32, shape=[None, self.trajectory, self.num_action])
 
-            self.discounts = tf.to_float(~self.d_ph) * self.discount_factor
+                if reward_clipping == 'abs_one':
+                    self.clipped_r_ph = tf.clip_by_value(self.r_ph, -1.0, 1.0)
+                elif reward_clipping == 'soft_asymmetric':
+                    squeezed = tf.tanh(self.r_ph / 5.0)
+                    self.clipped_r_ph = tf.where(self.r_ph < 0, .3 * squeezed, squeezed) * 5.
 
-            self.policy, self.c, self.h, self.unrolled_first_policy, \
-                self.unrolled_first_value, self.unrolled_middle_policy,\
-                    self.unrolled_middle_value, self.unrolled_last_policy,\
-                        self.unrolled_last_value = build_network(
-                                                    state=self.s_ph, previous_action=self.pa_ph, trajectory=self.trajectory,
-                                                    initial_h=self.initial_h_ph, initial_c=self.initial_c_ph,
-                                                    num_action=self.num_action, lstm_hidden_size=self.lstm_hidden_size,
-                                                    trajectory_state=self.t_s_ph, trajectory_previous_action=self.t_pa_ph,
-                                                    trajectory_initial_h=self.t_initial_h_ph, trajectory_initial_c=self.t_initial_c_ph)
+                self.discounts = tf.to_float(~self.d_ph) * self.discount_factor
 
-            self.unrolled_first_action, self.unrolled_middle_action, self.unrolled_last_action = vtrace.split_data(self.a_ph)
-            self.unrolled_first_reward, self.unrolled_middle_reward, self.unrolled_last_reward = vtrace.split_data(self.clipped_r_ph)
-            self.unrolled_first_discounts, self.unrolled_middle_discounts, self.unrolled_last_discounts = vtrace.split_data(self.discounts)
-            self.unrolled_first_behavior_policy, self.unrolled_middle_behavior_policy, self.unrolled_last_behavior_policy = vtrace.split_data(self.b_ph)
+                self.policy, self.c, self.h, self.unrolled_first_policy, \
+                    self.unrolled_first_value, self.unrolled_middle_policy,\
+                        self.unrolled_middle_value, self.unrolled_last_policy,\
+                            self.unrolled_last_value = build_network(
+                                                        state=self.s_ph, previous_action=self.pa_ph, trajectory=self.trajectory,
+                                                        initial_h=self.initial_h_ph, initial_c=self.initial_c_ph,
+                                                        num_action=self.num_action, lstm_hidden_size=self.lstm_hidden_size,
+                                                        trajectory_state=self.t_s_ph, trajectory_previous_action=self.t_pa_ph,
+                                                        trajectory_initial_h=self.t_initial_h_ph, trajectory_initial_c=self.t_initial_c_ph)
 
-            self.vs, self.clipped_rho = vtrace.from_softmax(
-                                            behavior_policy_softmax=self.unrolled_first_behavior_policy, target_policy_softmax=self.unrolled_first_policy,
-                                            actions=self.unrolled_first_action, discounts=self.unrolled_first_discounts, rewards=self.unrolled_first_reward,
-                                            values=self.unrolled_first_value, next_values=self.unrolled_middle_value, action_size=self.num_action)
+                self.unrolled_first_action, self.unrolled_middle_action, self.unrolled_last_action = vtrace.split_data(self.a_ph)
+                self.unrolled_first_reward, self.unrolled_middle_reward, self.unrolled_last_reward = vtrace.split_data(self.clipped_r_ph)
+                self.unrolled_first_discounts, self.unrolled_middle_discounts, self.unrolled_last_discounts = vtrace.split_data(self.discounts)
+                self.unrolled_first_behavior_policy, self.unrolled_middle_behavior_policy, self.unrolled_last_behavior_policy = vtrace.split_data(self.b_ph)
 
-            self.vs_plus_1, _ = vtrace.from_softmax(
-                                            behavior_policy_softmax=self.unrolled_middle_behavior_policy, target_policy_softmax=self.unrolled_middle_policy,
-                                            actions=self.unrolled_middle_action, discounts=self.unrolled_middle_discounts, rewards=self.unrolled_middle_reward,
-                                            values=self.unrolled_middle_value, next_values=self.unrolled_last_value, action_size=self.num_action)
+                self.vs, self.clipped_rho = vtrace.from_softmax(
+                                                behavior_policy_softmax=self.unrolled_first_behavior_policy, target_policy_softmax=self.unrolled_first_policy,
+                                                actions=self.unrolled_first_action, discounts=self.unrolled_first_discounts, rewards=self.unrolled_first_reward,
+                                                values=self.unrolled_first_value, next_values=self.unrolled_middle_value, action_size=self.num_action)
 
-            self.pg_advantage = tf.stop_gradient(
-                self.clipped_rho * \
-                    (self.unrolled_first_reward + self.unrolled_first_discounts * self.vs_plus_1 - self.unrolled_first_value))
+                self.vs_plus_1, _ = vtrace.from_softmax(
+                                                behavior_policy_softmax=self.unrolled_middle_behavior_policy, target_policy_softmax=self.unrolled_middle_policy,
+                                                actions=self.unrolled_middle_action, discounts=self.unrolled_middle_discounts, rewards=self.unrolled_middle_reward,
+                                                values=self.unrolled_middle_value, next_values=self.unrolled_last_value, action_size=self.num_action)
 
-            self.pi_loss = vtrace.compute_policy_gradient_loss(
-                softmax=self.unrolled_first_policy,
-                actions=self.unrolled_first_action,
-                advantages=self.pg_advantage,
-                output_size=self.num_action)
-            self.baseline_loss = vtrace.compute_baseline_loss(
-                vs=tf.stop_gradient(self.vs),
-                value=self.unrolled_first_value)
-            self.entropy = vtrace.compute_entropy_loss(
-                softmax=self.unrolled_first_policy)
+                self.pg_advantage = tf.stop_gradient(
+                    self.clipped_rho * \
+                        (self.unrolled_first_reward + self.unrolled_first_discounts * self.vs_plus_1 - self.unrolled_first_value))
 
-            self.total_loss = self.pi_loss + self.baseline_loss * self.baseline_loss_coef + self.entropy * self.entropy_coef
+                self.pi_loss = vtrace.compute_policy_gradient_loss(
+                    softmax=self.unrolled_first_policy,
+                    actions=self.unrolled_first_action,
+                    advantages=self.pg_advantage,
+                    output_size=self.num_action)
+                self.baseline_loss = vtrace.compute_baseline_loss(
+                    vs=tf.stop_gradient(self.vs),
+                    value=self.unrolled_first_value)
+                self.entropy = vtrace.compute_entropy_loss(
+                    softmax=self.unrolled_first_policy)
+
+                self.total_loss = self.pi_loss + self.baseline_loss * self.baseline_loss_coef + self.entropy * self.entropy_coef
 
             self.num_env_frames = tf.train.get_or_create_global_step()
             self.learning_rate = tf.train.polynomial_decay(self.start_learning_rate, self.num_env_frames, self.learning_frame, self.end_learning_rate)
