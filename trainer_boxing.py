@@ -55,10 +55,13 @@ def main(_):
     env_name = 'BoxingDeterministic-v4'
 
     with tf.device(shared_job_device):
-        queue = buffer_queue.FIFOQueue(
-            FLAGS.trajectory, input_shape, output_size,
-            FLAGS.queue_size, FLAGS.batch_size,
-            FLAGS.num_actors, FLAGS.lstm_size)
+        
+        with tf.device('/cpu'):
+            queue = buffer_queue.FIFOQueue(
+                FLAGS.trajectory, input_shape, output_size,
+                FLAGS.queue_size, FLAGS.batch_size,
+                FLAGS.num_actors, FLAGS.lstm_size)
+                
         learner = model.IMPALA(
             trajectory=FLAGS.trajectory,
             input_shape=input_shape,
